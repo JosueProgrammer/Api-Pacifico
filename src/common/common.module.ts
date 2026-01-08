@@ -18,6 +18,7 @@ import {
   Configuracion,
   LogActividad,
 } from './entities';
+import { PasswordResetService } from './services/password-reset.service';
 
 @Module({
   imports: [
@@ -40,7 +41,7 @@ import {
       LogActividad,
     ]),
   ],
-  providers: [],
-  exports: [TypeOrmModule],
+  providers: [PasswordResetService],
+  exports: [TypeOrmModule, PasswordResetService],
 })
 export class CommonModule {}

@@ -14,6 +14,8 @@ import { AuthGuard } from './common/guards/auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { APP_GUARD, APP_FILTER } from '@nestjs/core';
 import { AllExceptionsFilter } from './common/filters/all-exception.filter';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -45,6 +47,8 @@ import { AllExceptionsFilter } from './common/filters/all-exception.filter';
       inject: [ConfigService],
     }),
     CommonModule,
+    AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [

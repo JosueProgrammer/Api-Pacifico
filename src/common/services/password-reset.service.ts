@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -9,7 +9,8 @@ import { EmailTemplates } from '../utils/email-templates';
 import { ERROR_MESSAGES, ERROR_TITLES } from '../constants/error-messages.constants';
 
 @Injectable()
-export class PasswordResetService {
+export class PasswordResetService implements OnModuleInit {
+    private readonly logger = new Logger(PasswordResetService.name);
     private transporter: nodemailer.Transporter;
 
     constructor(
@@ -19,7 +20,12 @@ export class PasswordResetService {
     ) { }
 
     async onModuleInit() {
-        await this.initializeTransporter();
+        try {
+            await this.initializeTransporter();
+        } catch (error) {
+            this.logger.warn(`No se pudo inicializar el servicio de email: ${error.message}`);
+            this.logger.warn('El servicio de recuperación de contraseña no estará disponible hasta configurar GMAIL_USER y GMAIL_APP_PASSWORD correctamente');
+        }
     }
 
     private async initializeTransporter() {
@@ -35,7 +41,13 @@ export class PasswordResetService {
             auth: { user: gmailUser, pass: gmailPass },
         });
 
-        await this.transporter.verify();
+        try {
+            await this.transporter.verify();
+            this.logger.log('Servicio de email configurado correctamente');
+        } catch (error) {
+            this.logger.error(`Error al verificar credenciales de Gmail: ${error.message}`);
+            throw error;
+        }
     }
 
     /** Genera y envía un código de recuperación */
@@ -124,6 +136,12 @@ export class PasswordResetService {
         code: string,
         userName: string,
     ): Promise<void> {
+        if (!this.transporter) {
+            throw new BadRequestException(
+                'El servicio de email no está configurado. Por favor, configure GMAIL_USER y GMAIL_APP_PASSWORD en las variables de entorno.',
+            );
+        }
+
         const mailOptions = {
             from: `"API Pacifico" <${this.configService.get<string>('GMAIL_USER')}>`,
             to,
@@ -133,9 +151,10 @@ export class PasswordResetService {
 
         try {
             await this.transporter.sendMail(mailOptions);
-        } catch {
+        } catch (error) {
+            this.logger.error(`Error al enviar email: ${error.message}`);
             throw new BadRequestException(
-                'Error al enviar el código de recuperación',
+                'Error al enviar el código de recuperación. Verifique la configuración de email.',
             );
         }
     }
