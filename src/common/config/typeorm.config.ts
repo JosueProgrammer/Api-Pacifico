@@ -9,10 +9,11 @@ export const typeOrmConfig = (
   type: (configService.get<string>('TYPE') || 'postgres') as DatabaseType,
   url: configService.get<string>('POSTGRES_URL'),
   ssl: { rejectUnauthorized: false },
-  // Schema para el sistema de horarios
-  schema: 'sistema_horarios',
+  // Schema para API Pacifico
+  schema: 'api_pacifico',
   logging: configService.get<string>('NODE_ENV') !== 'production',
   entities: [__dirname + '/../../**/*.entity.{js,ts}'],
+  migrations: [__dirname + '/../../migrations/**/*.ts'],
   autoLoadEntities: true,
   synchronize: configService.get<boolean>('SYNCHRONIZE') || false,
 });
