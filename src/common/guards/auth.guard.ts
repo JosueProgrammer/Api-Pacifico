@@ -1,16 +1,19 @@
-/*import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-
-//import { UsersService } from '../../users/users.service';
+import { Usuario } from '../entities/usuario.entity';
+import { ERROR_MESSAGES, ERROR_TITLES } from '../constants/error-messages.constants';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
     private jwtService: JwtService,
-    //private usersService: UsersService,
+    @InjectRepository(Usuario)
+    private readonly usuarioRepository: Repository<Usuario>,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -37,7 +40,10 @@ export class AuthGuard implements CanActivate {
       });
 
       // Buscar el usuario en la base de datos
-      const usuario = await this.usersService.findById(payload.sub);
+      const usuario = await this.usuarioRepository.findOne({
+        where: { id: payload.sub, activo: true },
+        relations: ['rol'],
+      });
       if (!usuario) {
         throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND, ERROR_TITLES.AUTHENTICATION_ERROR);
       }
@@ -60,4 +66,3 @@ export class AuthGuard implements CanActivate {
 }
 
 
-*/

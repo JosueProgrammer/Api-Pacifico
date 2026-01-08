@@ -1,0 +1,61 @@
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Categoria } from './categoria.entity';
+import { DetalleVenta } from './detalle-venta.entity';
+import { DetalleCompra } from './detalle-compra.entity';
+import { Inventario } from './inventario.entity';
+
+@Entity({ name: 'productos' })
+export class Producto {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ name: 'codigo_barras', unique: true, nullable: true })
+  codigoBarras: string;
+
+  @Column({ nullable: false })
+  nombre: string;
+
+  @Column({ type: 'text', nullable: true })
+  descripcion: string;
+
+  @Column({ name: 'categoria_id', nullable: true })
+  categoriaId: string;
+
+  @Column({ name: 'precio_venta', type: 'decimal', precision: 10, scale: 2, nullable: false })
+  precioVenta: number;
+
+  @Column({ name: 'precio_compra', type: 'decimal', precision: 10, scale: 2, nullable: true })
+  precioCompra: number;
+
+  @Column({ type: 'int', default: 0 })
+  stock: number;
+
+  @Column({ name: 'stock_minimo', type: 'int', default: 0 })
+  stockMinimo: number;
+
+  @Column({ nullable: true })
+  imagen: string;
+
+  @Column({ name: 'activo', default: true })
+  activo: boolean;
+
+  @Column({ name: 'fecha_creacion', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  fechaCreacion: Date;
+
+  @Column({ name: 'fecha_actualizacion', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  fechaActualizacion: Date;
+
+  @ManyToOne(() => Categoria, (categoria: Categoria) => categoria.productos, { nullable: true })
+  @JoinColumn({ name: 'categoria_id' })
+  categoria: Categoria;
+
+  @OneToMany(() => DetalleVenta, (detalleVenta: DetalleVenta) => detalleVenta.producto)
+  detalleVentas: DetalleVenta[];
+
+  @OneToMany(() => DetalleCompra, (detalleCompra: DetalleCompra) => detalleCompra.producto)
+  detalleCompras: DetalleCompra[];
+
+  @OneToMany(() => Inventario, (inventario: Inventario) => inventario.producto)
+  movimientosInventario: Inventario[];
+}
+

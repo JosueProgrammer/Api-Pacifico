@@ -44,10 +44,10 @@ async function bootstrap() {
     new LoggingInterceptor(),
   );
 
-  // Configuración de Swagger para CUR-CARAZO
+  // Configuración de Swagger para API Pacifico
   const config = new DocumentBuilder()
-    .setTitle('CUR-CARAZO - Sistema de Horarios API')
-    .setDescription('API para gestión de horarios académicos, docentes y estudiantes del CUR-CARAZO')
+    .setTitle('API Pacifico')
+    .setDescription('API REST para servicios de Pacifico')
     .setVersion('1.0')
     .addBearerAuth()
     .addTag('API')
@@ -77,7 +77,7 @@ async function bootstrap() {
   await app.listen(port);
 
   Logger.log(
-    `CUR-CARAZO - Sistema de Horarios API iniciado en el puerto: ${port}`,
+    `API Pacifico iniciado en el puerto: ${port}`,
     'Bootstrap',
   );
   Logger.log(

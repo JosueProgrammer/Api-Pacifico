@@ -4,6 +4,7 @@ import {
   ArgumentMetadata,
   BadRequestException,
 } from '@nestjs/common';
+import { ERROR_MESSAGES, ERROR_TITLES } from '../constants/error-messages.constants';
 
 @Injectable()
 export class ParseQueryPipe implements PipeTransform {
@@ -18,10 +19,7 @@ export class ParseQueryPipe implements PipeTransform {
     if (value.page) {
       const page = parseInt(value.page);
       if (isNaN(page) || page < 1) {
-        throw new BadRequestException(
-          'El parámetro "page" debe ser un número positivo',
-          'Parámetro inválido'
-        );
+        throw new BadRequestException(ERROR_MESSAGES.PAGE_MUST_BE_POSITIVE, ERROR_TITLES.INVALID_PARAMETER);
       }
       result.page = page;
     }
@@ -29,10 +27,7 @@ export class ParseQueryPipe implements PipeTransform {
     if (value.limit) {
       const limit = parseInt(value.limit);
       if (isNaN(limit) || limit < 1 || limit > 100) {
-        throw new BadRequestException(
-          'El parámetro "limit" debe ser un número entre 1 y 100',
-          'Parámetro inválido'
-        );
+        throw new BadRequestException(ERROR_MESSAGES.LIMIT_MUST_BE_VALID, ERROR_TITLES.INVALID_PARAMETER);
       }
       result.limit = limit;
     }
@@ -45,10 +40,7 @@ export class ParseQueryPipe implements PipeTransform {
     if (value.sortOrder) {
       const sortOrder = value.sortOrder.toUpperCase();
       if (!['ASC', 'DESC'].includes(sortOrder)) {
-        throw new BadRequestException(
-          'El parámetro "sortOrder" debe ser "ASC" o "DESC"',
-          'Parámetro inválido'
-        );
+        throw new BadRequestException(ERROR_MESSAGES.SORT_ORDER_INVALID, ERROR_TITLES.INVALID_PARAMETER);
       }
       result.sortOrder = sortOrder;
     }
@@ -63,13 +55,12 @@ export class ParseQueryPipe implements PipeTransform {
       try {
         result.filters = JSON.parse(value.filters);
       } catch (error) {
-        throw new BadRequestException(
-          'El parámetro "filters" debe ser un JSON válido',
-          'Filtros inválidos'
-        );
+        throw new BadRequestException(ERROR_MESSAGES.INVALID_FILTERS_JSON, ERROR_TITLES.INVALID_FILTERS);
       }
     }
 
     return result;
   }
 }
+
+

@@ -15,6 +15,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '../exceptions/custom-exceptions';
+import { ERROR_MESSAGES, ERROR_TITLES } from '../constants/error-messages.constants';
 
 export const validRules = [
   'eq',
@@ -50,14 +51,13 @@ export const getWhereConditions = <T>(filter: FilteringParam<T> | null) => {
   if (!rule) return {};
   if (!value)
     throw new BadRequestException(
-      'El valor del filtro es obligatorio',
-      'Parámetro inválido',
+      ERROR_MESSAGES.FILTER_VALUE_REQUIRED,
+      ERROR_TITLES.INVALID_PARAMETER,
     );
-
   if (!field)
     throw new BadRequestException(
-      'El campo del filtro es obligatorio',
-      'Parámetro inválido',
+      ERROR_MESSAGES.FILTER_FIELD_REQUIRED,
+      ERROR_TITLES.INVALID_PARAMETER,
     );
 
   switch (rule) {
@@ -87,8 +87,8 @@ export const getWhereConditions = <T>(filter: FilteringParam<T> | null) => {
       return { [field]: Not(ILike(`%${value}%`)) };
     default:
       throw new BadRequestException(
-        `Regla de filtro inválida: ${rule}. Reglas válidas: ${validRules.join(', ')}`,
-        'Parámetro inválido',
+        `${ERROR_MESSAGES.INVALID_FILTER_RULE}: ${rule}. Reglas válidas: ${validRules.join(', ')}`,
+        ERROR_TITLES.INVALID_PARAMETER,
       );
   }
 };
@@ -107,34 +107,35 @@ export const handleDBErrors = (error: any, notFoundMessage?: string) => {
 
   if (error === null || error === undefined) {
     throw new NotFoundException(
-      notFoundMessage || 'Recurso no encontrado',
-      'No encontrado',
+      notFoundMessage || ERROR_MESSAGES.RESOURCE_NOT_FOUND,
+      ERROR_TITLES.NOT_FOUND_ERROR,
     );
   }
 
   if (error.code) {
     switch (error.code) {
-      case '23505':
+      case '23505': // Duplicated entry error
         throw new BadRequestException(
-          'El registro ya existe',
-          'Conflicto de datos',
+          ERROR_MESSAGES.DUPLICATE_ENTRY,
+          ERROR_TITLES.CONFLICT_ERROR,
         );
-      case '23503':
+      case '23503': // Foreign key violation error
         throw new BadRequestException(
-          'Violación de clave foránea',
-          'Error de validación',
+          ERROR_MESSAGES.FOREIGN_KEY_VIOLATION,
+          ERROR_TITLES.VALIDATION_ERROR,
         );
-      case '22P02':
+      case '22P02': // Invalid input syntax error
         throw new BadRequestException(
-          'Formato de dato inválido',
-          'Error de validación',
+          ERROR_MESSAGES.INVALID_INPUT_SYNTAX,
+          ERROR_TITLES.VALIDATION_ERROR,
         );
+      default:
     }
   }
 
   throw new InternalServerErrorException(
-    'Error interno del servidor',
-    'Error interno',
+    ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+    ERROR_TITLES.INTERNAL_ERROR,
   );
 };
 
@@ -153,14 +154,13 @@ export const getAndWhereConditions = <T>(
     if (!rule) return acc;
     if (!value)
       throw new BadRequestException(
-        'El valor del filtro es obligatorio',
-        'Parámetro inválido',
+        ERROR_MESSAGES.FILTER_VALUE_REQUIRED,
+        ERROR_TITLES.INVALID_PARAMETER,
       );
-
     if (!field)
       throw new BadRequestException(
-        'El campo del filtro es obligatorio',
-        'Parámetro inválido',
+        ERROR_MESSAGES.FILTER_FIELD_REQUIRED,
+        ERROR_TITLES.INVALID_PARAMETER,
       );
 
     switch (rule) {
@@ -202,8 +202,8 @@ export const getAndWhereConditions = <T>(
         break;
       default:
         throw new BadRequestException(
-          `Regla de filtro inválida: ${rule}. Reglas válidas: ${validRules.join(', ')}`,
-          'Parámetro inválido',
+          `${ERROR_MESSAGES.INVALID_FILTER_RULE}: ${rule}. Reglas válidas: ${validRules.join(', ')}`,
+          ERROR_TITLES.INVALID_PARAMETER,
         );
     }
 
@@ -212,3 +212,5 @@ export const getAndWhereConditions = <T>(
 
   return conditions;
 };
+
+
