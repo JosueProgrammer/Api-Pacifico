@@ -10,9 +10,7 @@ export * from './proveedor.entity';
 export * from './compra.entity';
 export * from './detalle-compra.entity';
 export * from './inventario.entity';
-export * from './almacen.entity';
 export * from './metodo-pago.entity';
 export * from './descuento.entity';
 export * from './configuracion.entity';
-export * from './log-actividad.entity';
 

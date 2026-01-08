@@ -204,19 +204,7 @@ export class MigracionCompletaPos1753120000000 implements MigrationInterface {
             )
         `);
 
-        // 15. Crear tabla de almacenes
-        await queryRunner.query(`
-            CREATE TABLE "api_pacifico"."almacenes" (
-                "id" uuid NOT NULL DEFAULT uuid_generate_v4(), 
-                "nombre" character varying NOT NULL, 
-                "direccion" text, 
-                "activo" boolean NOT NULL DEFAULT true, 
-                "fecha_creacion" TIMESTAMP NOT NULL DEFAULT now(), 
-                CONSTRAINT "PK_almacenes" PRIMARY KEY ("id")
-            )
-        `);
-
-        // 16. Crear tabla de descuentos
+        // 15. Crear tabla de descuentos
         await queryRunner.query(`
             CREATE TABLE "api_pacifico"."descuentos" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(), 
@@ -232,7 +220,7 @@ export class MigracionCompletaPos1753120000000 implements MigrationInterface {
             )
         `);
 
-        // 17. Crear tabla de configuracion
+        // 16. Crear tabla de configuracion
         await queryRunner.query(`
             CREATE TABLE "api_pacifico"."configuracion" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(), 
@@ -246,21 +234,7 @@ export class MigracionCompletaPos1753120000000 implements MigrationInterface {
             )
         `);
 
-        // 18. Crear tabla de logs_actividad
-        await queryRunner.query(`
-            CREATE TABLE "api_pacifico"."logs_actividad" (
-                "id" uuid NOT NULL DEFAULT uuid_generate_v4(), 
-                "usuario_id" uuid, 
-                "accion" character varying NOT NULL, 
-                "entidad" character varying, 
-                "entidad_id" uuid, 
-                "detalles" json, 
-                "fecha_creacion" TIMESTAMP NOT NULL DEFAULT now(), 
-                CONSTRAINT "PK_logs_actividad" PRIMARY KEY ("id")
-            )
-        `);
-
-        // 19. Agregar constraints de claves foráneas
+        // 17. Agregar constraints de claves foráneas
         await queryRunner.query(`
             ALTER TABLE "api_pacifico"."usuarios" 
             ADD CONSTRAINT "FK_usuarios_rol_id" 
@@ -365,15 +339,7 @@ export class MigracionCompletaPos1753120000000 implements MigrationInterface {
             ON DELETE RESTRICT ON UPDATE CASCADE
         `);
 
-        await queryRunner.query(`
-            ALTER TABLE "api_pacifico"."logs_actividad" 
-            ADD CONSTRAINT "FK_logs_actividad_usuario_id" 
-            FOREIGN KEY ("usuario_id") 
-            REFERENCES "api_pacifico"."usuarios"("id") 
-            ON DELETE SET NULL ON UPDATE CASCADE
-        `);
-
-        // 20. Insertar roles básicos del sistema
+        // 18. Insertar roles básicos del sistema
         await queryRunner.query(`
             INSERT INTO "api_pacifico"."roles" ("id", "nombre", "descripcion") VALUES
             (uuid_generate_v4(), 'Administrador', 'Administrador del sistema con todos los permisos'),
@@ -382,7 +348,7 @@ export class MigracionCompletaPos1753120000000 implements MigrationInterface {
             (uuid_generate_v4(), 'Supervisor', 'Supervisor con permisos de gestión')
         `);
 
-        // 21. Insertar métodos de pago básicos
+        // 19. Insertar métodos de pago básicos
         await queryRunner.query(`
             INSERT INTO "api_pacifico"."metodos_pago" ("id", "nombre", "descripcion") VALUES
             (uuid_generate_v4(), 'Efectivo', 'Pago en efectivo'),
@@ -394,7 +360,6 @@ export class MigracionCompletaPos1753120000000 implements MigrationInterface {
 
     public async down(queryRunner: QueryRunner): Promise<void> {
         // Eliminar constraints de claves foráneas
-        await queryRunner.query(`ALTER TABLE "api_pacifico"."logs_actividad" DROP CONSTRAINT "FK_logs_actividad_usuario_id"`);
         await queryRunner.query(`ALTER TABLE "api_pacifico"."inventario" DROP CONSTRAINT "FK_inventario_usuario_id"`);
         await queryRunner.query(`ALTER TABLE "api_pacifico"."inventario" DROP CONSTRAINT "FK_inventario_producto_id"`);
         await queryRunner.query(`ALTER TABLE "api_pacifico"."detalle_compras" DROP CONSTRAINT "FK_detalle_compras_producto_id"`);
@@ -410,10 +375,8 @@ export class MigracionCompletaPos1753120000000 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "api_pacifico"."usuarios" DROP CONSTRAINT "FK_usuarios_rol_id"`);
 
         // Eliminar tablas en orden inverso
-        await queryRunner.query(`DROP TABLE "api_pacifico"."logs_actividad"`);
         await queryRunner.query(`DROP TABLE "api_pacifico"."configuracion"`);
         await queryRunner.query(`DROP TABLE "api_pacifico"."descuentos"`);
-        await queryRunner.query(`DROP TABLE "api_pacifico"."almacenes"`);
         await queryRunner.query(`DROP TABLE "api_pacifico"."inventario"`);
         await queryRunner.query(`DROP TABLE "api_pacifico"."detalle_compras"`);
         await queryRunner.query(`DROP TABLE "api_pacifico"."compras"`);

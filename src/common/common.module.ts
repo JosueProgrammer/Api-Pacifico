@@ -12,11 +12,9 @@ import {
   Compra,
   DetalleCompra,
   Inventario,
-  Almacen,
   MetodoPago,
   Descuento,
   Configuracion,
-  LogActividad,
 } from './entities';
 import { PasswordResetService } from './services/password-reset.service';
 
@@ -34,11 +32,9 @@ import { PasswordResetService } from './services/password-reset.service';
       Compra,
       DetalleCompra,
       Inventario,
-      Almacen,
       MetodoPago,
       Descuento,
       Configuracion,
-      LogActividad,
     ]),
   ],
   providers: [PasswordResetService],
