@@ -88,6 +88,18 @@ export const ERROR_MESSAGES = {
   
   // Mensajes de Firebase
   FIREBASE_NOT_INITIALIZED: 'Firebase app no está inicializada. Llama a getInstance() primero',
+  
+  // Mensajes de categorías
+  CATEGORIA_NOT_CREATED: 'Error al crear la categoría',
+  CATEGORIA_NOT_UPDATED: 'Error al actualizar la categoría',
+  CATEGORIA_NOT_DELETED: 'Error al eliminar la categoría',
+  CATEGORIAS_NOT_FOUND: 'Error al obtener las categorías',
+  
+  // Mensajes de productos
+  PRODUCTO_NOT_CREATED: 'Error al crear el producto',
+  PRODUCTO_NOT_UPDATED: 'Error al actualizar el producto',
+  PRODUCTO_NOT_DELETED: 'Error al eliminar el producto',
+  PRODUCTOS_NOT_FOUND: 'Error al obtener los productos',
 } as const;
 
 /**
