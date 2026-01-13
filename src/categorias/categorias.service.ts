@@ -9,7 +9,7 @@ import { Categoria } from '../common/entities/categoria.entity';
 import { CreateCategoriaDto, UpdateCategoriaDto, QueryCategoriaDto } from './dtos';
 import {
     getWhereConditions,
-    getSortingOrder,
+    getSortingOrder
     handleDBErrors,
     FilteringParam,
     SortingParam,

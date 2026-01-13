@@ -8,8 +8,7 @@ import {
   IsBoolean,
   IsNumber,
   IsUUID,
-  Min,
-  IsPositive,
+  Min
 } from 'class-validator';
 import { TransformTrim } from '../../common/decorators';
 import { Type } from 'class-transformer';

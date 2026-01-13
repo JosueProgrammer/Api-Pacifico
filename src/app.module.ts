@@ -18,6 +18,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CategoriasModule } from './categorias/categorias.module';
 import { ProductosModule } from './productos/productos.module';
+import { ClienteModule } from './cliente/cliente.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { ProductosModule } from './productos/productos.module';
     UsersModule,
     CategoriasModule,
     ProductosModule,
+    ClienteModule,
   ],
   controllers: [AppController],
   providers: [

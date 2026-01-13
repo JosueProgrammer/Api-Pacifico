@@ -15,18 +15,6 @@ export class Cliente {
   @Column({ nullable: true })
   telefono: string;
 
-  @Column({ type: 'text', nullable: true })
-  direccion: string;
-
-  @Column({ name: 'tipo_documento', nullable: true })
-  tipoDocumento: string;
-
-  @Column({ name: 'numero_documento', nullable: true })
-  numeroDocumento: string;
-
-  @Column({ name: 'fecha_nacimiento', type: 'date', nullable: true })
-  fechaNacimiento: Date;
-
   @Column({ name: 'activo', default: true })
   activo: boolean;
 
