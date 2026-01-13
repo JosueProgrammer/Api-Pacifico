@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cliente } from 'src/common/entities';
@@ -8,7 +8,8 @@ import { plainToInstance } from 'class-transformer';
 import { ApiPaginatedMetaDto, ApiPaginatedResponseDto, PaginationParamsDto } from 'src/common/dto';
 import { FilteringParam, handleDBErrors, SortingParam } from 'src/common/helpers';
 import { ERROR_MESSAGES } from 'src/common/constants/error-messages.constants';
-import { getWhereConditions,getSortingOrder } from 'src/common/helpers';
+import { getWhereConditions, getSortingOrder } from 'src/common/helpers';
+import { UpdateClienteDto } from './dto/update-cliente.dto';
 
 @Injectable()
 export class ClienteService {
@@ -45,57 +46,120 @@ export class ClienteService {
   }
 
   async findAll(
-  pagination: PaginationParamsDto,
-  filter?: FilteringParam<Cliente> | null,
-  sorting?: SortingParam<Cliente> | null,
-): Promise<ApiPaginatedResponseDto<ClienteResponseDto>> {
-  try {
-    const { page, limit } = pagination;
-    const skip = (page - 1) * limit;
+    pagination: PaginationParamsDto,
+    filter?: FilteringParam<Cliente> | null,
+    sorting?: SortingParam<Cliente> | null,
+  ): Promise<ApiPaginatedResponseDto<ClienteResponseDto>> {
+    try {
+      const { page, limit } = pagination;
+      const skip = (page - 1) * limit;
 
-    // Construir condiciones de filtrado
-    const whereConditions = getWhereConditions(filter ?? null);
+      // Construir condiciones de filtrado
+      const whereConditions = getWhereConditions(filter ?? null);
 
-    // Aplicar ordenamiento (default por nombre)
-    const order = {
-      nombre: 'ASC' as const,
-      ...getSortingOrder(sorting ?? null),
-    };
+      // Aplicar ordenamiento (default por nombre)
+      const order = {
+        nombre: 'ASC' as const,
+        ...getSortingOrder(sorting ?? null),
+      };
 
-    // Total de registros
-    const total = await this.clienteRepository.count({
-      where: whereConditions,
-    });
+      // Total de registros
+      const total = await this.clienteRepository.count({
+        where: whereConditions,
+      });
 
-    // Registros paginados
-    const clientes = await this.clienteRepository.find({
-      where: whereConditions,
-      order,
-      skip,
-      take: limit,
-    });
+      // Registros paginados
+      const clientes = await this.clienteRepository.find({
+        where: whereConditions,
+        order,
+        skip,
+        take: limit,
+      });
 
-    const data = plainToInstance(ClienteResponseDto, clientes);
+      const data = plainToInstance(ClienteResponseDto, clientes);
 
-    const meta: ApiPaginatedMetaDto = {
-      currentPage: page,
-      itemsPerPage: limit,
-      totalItems: total,
-      totalPages: Math.ceil(total / limit),
-      hasNextPage: page < Math.ceil(total / limit),
-      hasPreviousPage: page > 1,
-    };
+      const meta: ApiPaginatedMetaDto = {
+        currentPage: page,
+        itemsPerPage: limit,
+        totalItems: total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPreviousPage: page > 1,
+      };
 
-    return ApiPaginatedResponseDto.Success(
-      data,
-      meta,
-      'Clientes obtenidos exitosamente',
-      'Lista de clientes',
-    );
-  } catch (error) {
-    handleDBErrors(error, ERROR_MESSAGES.CLIENTES_NOT_FOUND);
-    throw error;
+      return ApiPaginatedResponseDto.Success(
+        data,
+        meta,
+        'Clientes obtenidos exitosamente',
+        'Lista de clientes',
+      );
+    } catch (error) {
+      handleDBErrors(error, ERROR_MESSAGES.CLIENTES_NOT_FOUND);
+      throw error;
+    }
   }
-}
 
+  async findOne(id: string): Promise<ClienteResponseDto> {
+    try {
+      const cliente = await this.clienteRepository.findOne({
+        where: { id }
+      })
+
+      if (!cliente) {
+        throw new NotFoundException('Cliente no encontrado');
+      }
+
+      return plainToInstance(ClienteResponseDto, cliente);
+
+    } catch (error) {
+      throw new BadRequestException('Error al obtener el cliente');
+    }
+  }
+
+  async update(
+    id: string,
+    updateClienteDto: UpdateClienteDto,
+  ): Promise<ClienteResponseDto> {
+    try {
+      // Buscar el cliente
+      const cliente = await this.findOne(id);
+
+      // Verificar correo duplicado si se está actualizando
+      if (updateClienteDto.correo && updateClienteDto.correo !== cliente.correo) {
+        const clienteExistente = await this.clienteRepository.findOne({
+          where: { correo: updateClienteDto.correo },
+        });
+
+        if (clienteExistente) {
+          throw new BadRequestException(
+            `Ya existe un cliente con el correo "${updateClienteDto.correo}"`,
+          );
+        }
+      }
+
+      Object.assign(cliente, updateClienteDto);
+
+      const clienteActualizado = await this.clienteRepository.save(cliente);
+
+      return plainToInstance(ClienteResponseDto, clienteActualizado);
+    } catch (error) {
+      handleDBErrors(error, ERROR_MESSAGES.CLIENTE_NOT_UPDATED);
+      throw error;
+    }
+  }
+
+  async remove(id: string): Promise<void> {
+    try {
+      const cliente = await this.clienteRepository.findOne({
+        where: { id }
+      });
+      if (!cliente) {
+        throw new NotFoundException('Cliente no encontrado');
+      }
+      await this.clienteRepository.remove(cliente);
+    } catch (error) {
+      handleDBErrors(error, 'Error al eliminar el cliente');
+      throw error;
+    }
+  }
 }

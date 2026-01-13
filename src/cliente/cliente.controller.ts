@@ -1,14 +1,15 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get, Param, Patch, Delete } from '@nestjs/common';
 import { ClienteService } from './cliente.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { ApiResponseWithData, FilteringParamDecorator, PaginationParam, Roles, SortingParamDecorator } from 'src/common/decorators';
-import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { ClienteResponseDto } from './dto/cliente-response.dto';
 import { UserRole } from 'src/auth/enums/user-rol.enum';
 import { userInfo } from 'os';
 import { ApiResponseDto } from 'src/common/dto';
 import { FilteringParam, SortingParam } from 'src/common/helpers';
 import { Cliente } from 'src/common/entities';
+import { UpdateClienteDto } from './dto/update-cliente.dto';
 
 @Controller('cliente')
 export class ClienteController {
@@ -55,5 +56,92 @@ export class ClienteController {
   ) {
     return await this.clienteService.findAll(pagination, filter, sorting);
   }
+
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Obtener un cliente por ID',
+    description: 'Obtiene los detalles de un cliente específico.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del cliente',
+    type: String,
+    example: 'a3f1c2b4-8e9d-4f2a-bc1e-123456789abc',
+  })
+  @ApiResponseWithData(
+    ClienteResponseDto,
+    'Cliente obtenido exitosamente',
+    HttpStatus.OK,
+  )
+  async findOne(@Param('id') id: string) {
+    const cliente = await this.clienteService.findOne(id);
+
+    return ApiResponseDto.Success(
+      cliente,
+      'Obtener Cliente',
+      'Cliente obtenido exitosamente',
+    );
+  }
+
+  @Patch(':id')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR)
+  @ApiOperation({
+    summary: 'Actualizar un cliente',
+    description: 'Actualiza los datos de un cliente existente. Requiere permisos de Administrador o Supervisor.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del cliente',
+    type: String,
+    example: 'a3f1c2b4-8e9d-4f2a-bc1e-123456789abc',
+  })
+  @ApiResponseWithData(
+    ClienteResponseDto,
+    'Cliente actualizado exitosamente',
+    HttpStatus.OK,
+  )
+  async update(
+    @Param('id') id: string,
+    @Body() updateClienteDto: UpdateClienteDto,
+  ) {
+    const cliente = await this.clienteService.update(id, updateClienteDto);
+
+    return ApiResponseDto.Success(
+      cliente,
+      'Actualizar Cliente',
+      'Cliente actualizado exitosamente',
+    );
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.ADMINISTRADOR)
+  @ApiOperation({
+    summary: 'Eliminar un cliente',
+    description: 'Elimina un cliente del sistema. Solo se puede eliminar si no tiene ventas asociadas. Requiere permisos de Administrador.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del cliente',
+    type: String,
+    example: 'a3f1c2b4-8e9d-4f2a-bc1e-123456789abc',
+  })
+  @ApiResponseWithData(
+    Object,
+    'Cliente eliminado exitosamente',
+    HttpStatus.OK,
+  )
+  async remove(@Param('id') id: string) {
+    await this.clienteService.remove(id);
+
+    return ApiResponseDto.Success(
+      null,
+      'Eliminar Cliente',
+      'Cliente eliminado exitosamente',
+    );
+  }
+
 
 }

@@ -95,6 +95,7 @@ export const ERROR_MESSAGES = {
   CATEGORIA_NOT_DELETED: 'Error al eliminar la categoría',
   CATEGORIAS_NOT_FOUND: 'Error al obtener las categorías',
   CLIENTES_NOT_FOUND: 'Error al obtener los clientes',
+  CLIENTE_NOT_UPDATED: 'Error al actualizar el cliente',
   
   // Mensajes de productos
   PRODUCTO_NOT_CREATED: 'Error al crear el producto',
