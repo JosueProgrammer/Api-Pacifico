@@ -12,7 +12,7 @@ import {
 import { ProveedoresService } from './proveedores.service';
 import { CreateProveedoreDto } from './dto/create-proveedore.dto';
 import { UpdateProveedoreDto } from './dto/update-proveedore.dto';
-import { ApiOperation, ApiTags, ApiParam, } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiParam, ApiBearerAuth, } from '@nestjs/swagger';
 import { ApiResponseWithData, ApiResponseWithPagination, PaginationParam, FilteringParamDecorator, SortingParamDecorator } from '../common/decorators';
 import { ApiResponseDto } from '../common/dto/api-response.dto';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -24,6 +24,7 @@ import { ERROR_MESSAGES } from 'src/common/constants/error-messages.constants';
 
 @ApiTags('Proveedores')
 @Controller('proveedores')
+@ApiBearerAuth()
 export class ProveedoresController {
   constructor(private readonly proveedoresService: ProveedoresService) { }
 
