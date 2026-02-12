@@ -6,7 +6,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Categoria } from '../common/entities/categoria.entity';
-import { CreateCategoriaDto, UpdateCategoriaDto, QueryCategoriaDto } from './dtos';
+import { CreateCategoriaDto, UpdateCategoriaDto, QueryCategoriaDto, CategoriaResponseDto } from './dtos';
+import { plainToInstance } from 'class-transformer';
 import {
     getWhereConditions,
     getSortingOrder,
@@ -26,7 +27,24 @@ export class CategoriasService {
         private readonly categoriaRepository: Repository<Categoria>,
     ) { }
 
-    async create(createCategoriaDto: CreateCategoriaDto): Promise<Categoria> {
+    private async findEntityById(id: string): Promise<Categoria> {
+        const categoria = await this.categoriaRepository.findOne({
+            where: { id },
+            relations: ['productos'],
+        });
+
+        if (!categoria) {
+            throw new NotFoundException(
+                `Categoría con ID "${id}" no encontrada`,
+                ERROR_TITLES.NOT_FOUND_ERROR,
+            );
+        }
+
+        return categoria;
+    }
+
+
+    async create(createCategoriaDto: CreateCategoriaDto): Promise<CategoriaResponseDto> {
         try {
             // Verificar si ya existe una categoría con el mismo nombre
             const categoriaExistente = await this.categoriaRepository.findOne({
@@ -45,18 +63,19 @@ export class CategoriasService {
                 activo: createCategoriaDto.activo ?? true,
             });
 
-            return await this.categoriaRepository.save(categoria);
+            const savedCategoria = await this.categoriaRepository.save(categoria);
+            return plainToInstance(CategoriaResponseDto, savedCategoria);
         } catch (error) {
             handleDBErrors(error, ERROR_MESSAGES.CATEGORIA_NOT_CREATED);
             throw error;
         }
     }
 
-    async  findAll(
+    async findAll(
         pagination: PaginationParamsDto,
         filter?: FilteringParam<Categoria> | null,
         sorting?: SortingParam<Categoria> | null,
-    ): Promise<ApiPaginatedResponseDto<Categoria>> {
+    ): Promise<ApiPaginatedResponseDto<CategoriaResponseDto>> {
         try {
             const { page, limit } = pagination;
             const skip = (page - 1) * limit;
@@ -81,8 +100,9 @@ export class CategoriasService {
                 order,
                 skip,
                 take: limit,
-                relations: ['productos'],
             });
+
+            const data = plainToInstance(CategoriaResponseDto, categorias);
 
             const meta: ApiPaginatedMetaDto = {
                 currentPage: page,
@@ -94,7 +114,7 @@ export class CategoriasService {
             };
 
             return ApiPaginatedResponseDto.Success(
-                categorias,
+                data,
                 meta,
                 'Categorías obtenidas exitosamente',
                 'Lista de categorías',
@@ -105,30 +125,19 @@ export class CategoriasService {
         }
     }
 
-    async findOne(id: string): Promise<Categoria> {
+    async findOne(id: string): Promise<CategoriaResponseDto> {
         try {
-            const categoria = await this.categoriaRepository.findOne({
-                where: { id },
-                relations: ['productos'],
-            });
-
-            if (!categoria) {
-                throw new NotFoundException(
-                    `Categoría con ID "${id}" no encontrada`,
-                    ERROR_TITLES.NOT_FOUND_ERROR,
-                );
-            }
-
-            return categoria;
+            const categoria = await this.findEntityById(id);
+            return plainToInstance(CategoriaResponseDto, categoria);
         } catch (error) {
             handleDBErrors(error, `Categoría con ID "${id}" no encontrada`);
             throw error;
         }
     }
 
-    async update(id: string, updateCategoriaDto: UpdateCategoriaDto): Promise<Categoria> {
+    async update(id: string, updateCategoriaDto: UpdateCategoriaDto): Promise<CategoriaResponseDto> {
         try {
-            const categoria = await this.findOne(id);
+            const categoria = await this.findEntityById(id);
 
             // Si se está actualizando el nombre, verificar que no exista otra categoría con el mismo nombre
             if (updateCategoriaDto.nombre && updateCategoriaDto.nombre !== categoria.nombre) {
@@ -146,7 +155,8 @@ export class CategoriasService {
 
             // Actualizar la categoría
             Object.assign(categoria, updateCategoriaDto);
-            return await this.categoriaRepository.save(categoria);
+            const updatedCategoria = await this.categoriaRepository.save(categoria);
+            return plainToInstance(CategoriaResponseDto, updatedCategoria);
         } catch (error) {
             handleDBErrors(error, ERROR_MESSAGES.CATEGORIA_NOT_UPDATED);
             throw error;
@@ -155,7 +165,7 @@ export class CategoriasService {
 
     async remove(id: string): Promise<void> {
         try {
-            const categoria = await this.findOne(id);
+            const categoria = await this.findEntityById(id);
 
             // Verificar si la categoría tiene productos asociados
             if (categoria.productos && categoria.productos.length > 0) {
@@ -172,22 +182,24 @@ export class CategoriasService {
         }
     }
 
-    async activate(id: string): Promise<Categoria> {
+    async activate(id: string): Promise<CategoriaResponseDto> {
         try {
-            const categoria = await this.findOne(id);
+            const categoria = await this.findEntityById(id);
             categoria.activo = true;
-            return await this.categoriaRepository.save(categoria);
+            const updated = await this.categoriaRepository.save(categoria);
+            return plainToInstance(CategoriaResponseDto, updated);
         } catch (error) {
             handleDBErrors(error, ERROR_MESSAGES.CATEGORIA_NOT_UPDATED);
             throw error;
         }
     }
 
-    async deactivate(id: string): Promise<Categoria> {
+    async deactivate(id: string): Promise<CategoriaResponseDto> {
         try {
-            const categoria = await this.findOne(id);
+            const categoria = await this.findEntityById(id);
             categoria.activo = false;
-            return await this.categoriaRepository.save(categoria);
+            const updated = await this.categoriaRepository.save(categoria);
+            return plainToInstance(CategoriaResponseDto, updated);
         } catch (error) {
             handleDBErrors(error, ERROR_MESSAGES.CATEGORIA_NOT_UPDATED);
             throw error;

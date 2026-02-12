@@ -25,15 +25,15 @@ export class LoggingInterceptor implements NestInterceptor {
       `Incoming Request: ${method} ${url} - IP: ${ip} - User-Agent: ${userAgent}`,
     );
 
-    if (Object.keys(body).length > 0) {
+    if (body && Object.keys(body).length > 0) {
       this.logger.debug(`Request Body: ${JSON.stringify(body)}`);
     }
 
-    if (Object.keys(query).length > 0) {
+    if (query && Object.keys(query).length > 0) {
       this.logger.debug(`Request Query: ${JSON.stringify(query)}`);
     }
 
-    if (Object.keys(params).length > 0) {
+    if (params && Object.keys(params).length > 0) {
       this.logger.debug(`Request Params: ${JSON.stringify(params)}`);
     }
 
@@ -42,14 +42,14 @@ export class LoggingInterceptor implements NestInterceptor {
         next: (data) => {
           const response = context.switchToHttp().getResponse<Response>();
           const delay = Date.now() - now;
-          
+
           this.logger.log(
             `Response: ${method} ${url} - Status: ${response.statusCode} - Duration: ${delay}ms`,
           );
         },
         error: (error) => {
           const delay = Date.now() - now;
-          
+
           this.logger.error(
             `Error Response: ${method} ${url} - Error: ${error.message} - Duration: ${delay}ms`,
             error.stack,

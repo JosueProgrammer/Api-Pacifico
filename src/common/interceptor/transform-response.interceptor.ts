@@ -10,8 +10,7 @@ import { ApiResponseDto } from '../dto/api-response.dto';
 
 @Injectable()
 export class TransformResponseInterceptor<T>
-  implements NestInterceptor<T, ApiResponseDto<T>>
-{
+  implements NestInterceptor<T, ApiResponseDto<T>> {
   intercept(
     context: ExecutionContext,
     next: CallHandler,
@@ -27,16 +26,16 @@ export class TransformResponseInterceptor<T>
         if (data === null || data === undefined) {
           return ApiResponseDto.Success(
             data as T,
-            'Operación Académica Exitosa',
-            'La operación académica se completó correctamente',
+            'Operación Exitosa',
+            'La operación se completó correctamente',
           );
         }
 
         // Transformamos la respuesta al formato estándar
         return ApiResponseDto.Success(
           data,
-          'Operación Académica Exitosa',
-          'La operación académica se completó correctamente',
+          'Operación Exitosa',
+          'La operación se completó correctamente',
         );
       }),
     );

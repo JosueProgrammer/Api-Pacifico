@@ -11,7 +11,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { CategoriasService } from './categorias.service';
-import { CreateCategoriaDto, UpdateCategoriaDto, QueryCategoriaDto } from './dtos';
+import { CreateCategoriaDto, UpdateCategoriaDto, QueryCategoriaDto, CategoriaResponseDto } from './dtos';
 import { ApiOperation, ApiTags, ApiParam, } from '@nestjs/swagger';
 import { ApiResponseWithData, ApiResponseWithPagination, PaginationParam, FilteringParamDecorator, SortingParamDecorator } from '../common/decorators';
 import { Categoria } from '../common/entities/categoria.entity';
@@ -19,11 +19,12 @@ import { ApiResponseDto } from '../common/dto/api-response.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../auth/enums/user-rol.enum';
 import { FilteringParam, SortingParam } from '../common/helpers/typeorm-helpers';
-
+import { ApiBearerAuth } from '@nestjs/swagger';
 @ApiTags('Categorías')
 @Controller('categorias')
+@ApiBearerAuth()
 export class CategoriasController {
-  constructor(private readonly categoriasService: CategoriasService) {}
+  constructor(private readonly categoriasService: CategoriasService) { }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -33,7 +34,7 @@ export class CategoriasController {
     description: 'Crea una nueva categoría en el sistema. Requiere permisos de Administrador o Supervisor.',
   })
   @ApiResponseWithData(
-    Categoria,
+    CategoriaResponseDto,
     'Categoría creada exitosamente',
     HttpStatus.CREATED,
   )
@@ -53,7 +54,7 @@ export class CategoriasController {
     description: 'Obtiene una lista paginada de categorías con opciones de filtrado y ordenamiento.',
   })
   @ApiResponseWithPagination(
-    Categoria,
+    CategoriaResponseDto,
     'Lista de categorías obtenida exitosamente',
     HttpStatus.OK,
   )
@@ -78,7 +79,7 @@ export class CategoriasController {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiResponseWithData(
-    Categoria,
+    CategoriaResponseDto,
     'Categoría obtenida exitosamente',
     HttpStatus.OK,
   )
@@ -105,7 +106,7 @@ export class CategoriasController {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiResponseWithData(
-    Categoria,
+    CategoriaResponseDto,
     'Categoría actualizada exitosamente',
     HttpStatus.OK,
   )
@@ -162,7 +163,7 @@ export class CategoriasController {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiResponseWithData(
-    Categoria,
+    CategoriaResponseDto,
     'Categoría activada exitosamente',
     HttpStatus.OK,
   )
@@ -189,7 +190,7 @@ export class CategoriasController {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiResponseWithData(
-    Categoria,
+    CategoriaResponseDto,
     'Categoría desactivada exitosamente',
     HttpStatus.OK,
   )
