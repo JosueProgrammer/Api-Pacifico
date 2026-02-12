@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { CategoriasService } from './categorias.service';
 import { CreateCategoriaDto, UpdateCategoriaDto, QueryCategoriaDto } from './dtos';
-import { ApiOperation, ApiTags, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiParam, } from '@nestjs/swagger';
 import { ApiResponseWithData, ApiResponseWithPagination, PaginationParam, FilteringParamDecorator, SortingParamDecorator } from '../common/decorators';
 import { Categoria } from '../common/entities/categoria.entity';
 import { ApiResponseDto } from '../common/dto/api-response.dto';

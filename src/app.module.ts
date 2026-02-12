@@ -19,6 +19,7 @@ import { UsersModule } from './users/users.module';
 import { CategoriasModule } from './categorias/categorias.module';
 import { ProductosModule } from './productos/productos.module';
 import { ClienteModule } from './cliente/cliente.module';
+import { ProveedoresModule } from './proveedores/proveedores.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { ClienteModule } from './cliente/cliente.module';
     CategoriasModule,
     ProductosModule,
     ClienteModule,
+    ProveedoresModule,
   ],
   controllers: [AppController],
   providers: [

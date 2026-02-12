@@ -9,7 +9,7 @@ import { Categoria } from '../common/entities/categoria.entity';
 import { CreateCategoriaDto, UpdateCategoriaDto, QueryCategoriaDto } from './dtos';
 import {
     getWhereConditions,
-    getSortingOrder
+    getSortingOrder,
     handleDBErrors,
     FilteringParam,
     SortingParam,
@@ -52,7 +52,7 @@ export class CategoriasService {
         }
     }
 
-    async findAll(
+    async  findAll(
         pagination: PaginationParamsDto,
         filter?: FilteringParam<Categoria> | null,
         sorting?: SortingParam<Categoria> | null,
