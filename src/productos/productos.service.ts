@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Producto } from '../common/entities/producto.entity';
 import { Categoria } from '../common/entities/categoria.entity';
+import { Proveedor } from '../common/entities/proveedor.entity';
 import { CreateProductoDto, UpdateProductoDto } from './dtos';
 import {
     getWhereConditions,
@@ -27,6 +28,8 @@ export class ProductosService {
         private readonly productoRepository: Repository<Producto>,
         @InjectRepository(Categoria)
         private readonly categoriaRepository: Repository<Categoria>,
+        @InjectRepository(Proveedor)
+        private readonly proveedorRepository: Repository<Proveedor>,
     ) { }
 
     async create(createProductoDto: CreateProductoDto): Promise<Producto> {
@@ -54,6 +57,20 @@ export class ProductosService {
                 if (!categoria) {
                     throw new NotFoundException(
                         `Categoría con ID "${createProductoDto.categoriaId}" no encontrada`,
+                        ERROR_TITLES.NOT_FOUND_ERROR,
+                    );
+                }
+            }
+
+            // Verificar si el proveedor existe (si se proporciona)
+            if (createProductoDto.proveedorId) {
+                const proveedor = await this.proveedorRepository.findOne({
+                    where: { id: createProductoDto.proveedorId },
+                });
+
+                if (!proveedor) {
+                    throw new NotFoundException(
+                        `Proveedor con ID "${createProductoDto.proveedorId}" no encontrado`,
                         ERROR_TITLES.NOT_FOUND_ERROR,
                     );
                 }
@@ -102,7 +119,7 @@ export class ProductosService {
                 order,
                 skip,
                 take: limit,
-                relations: ['categoria'],
+                relations: ['categoria', 'proveedor'],
             });
 
             const meta: ApiPaginatedMetaDto = {
@@ -130,7 +147,7 @@ export class ProductosService {
         try {
             const producto = await this.productoRepository.findOne({
                 where: { id },
-                relations: ['categoria'],
+                relations: ['categoria', 'proveedor'],
             });
 
             if (!producto) {
@@ -174,6 +191,20 @@ export class ProductosService {
                 if (!categoria) {
                     throw new NotFoundException(
                         `Categoría con ID "${updateProductoDto.categoriaId}" no encontrada`,
+                        ERROR_TITLES.NOT_FOUND_ERROR,
+                    );
+                }
+            }
+
+            // Verificar si el proveedor existe (si se proporciona)
+            if (updateProductoDto.proveedorId) {
+                const proveedor = await this.proveedorRepository.findOne({
+                    where: { id: updateProductoDto.proveedorId },
+                });
+
+                if (!proveedor) {
+                    throw new NotFoundException(
+                        `Proveedor con ID "${updateProductoDto.proveedorId}" no encontrado`,
                         ERROR_TITLES.NOT_FOUND_ERROR,
                     );
                 }

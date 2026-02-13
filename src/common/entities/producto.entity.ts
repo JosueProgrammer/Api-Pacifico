@@ -3,6 +3,7 @@ import { Categoria } from './categoria.entity';
 import { DetalleVenta } from './detalle-venta.entity';
 import { DetalleCompra } from './detalle-compra.entity';
 import { Inventario } from './inventario.entity';
+import { Proveedor } from './proveedor.entity';
 
 @Entity({ name: 'productos' })
 export class Producto {
@@ -48,6 +49,13 @@ export class Producto {
   @ManyToOne(() => Categoria, (categoria: Categoria) => categoria.productos, { nullable: true })
   @JoinColumn({ name: 'categoria_id' })
   categoria: Categoria;
+
+  @Column({ name: 'proveedor_id', nullable: true })
+  proveedorId: string;
+
+  @ManyToOne(() => Proveedor, { nullable: true })
+  @JoinColumn({ name: 'proveedor_id' })
+  proveedor: Proveedor;
 
   @OneToMany(() => DetalleVenta, (detalleVenta: DetalleVenta) => detalleVenta.producto)
   detalleVentas: DetalleVenta[];

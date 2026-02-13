@@ -59,6 +59,15 @@ export class UpdateProductoDto {
   categoriaId?: string;
 
   @ApiProperty({
+    description: 'ID del proveedor del producto',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID('4', { message: 'El ID del proveedor debe ser un UUID válido' })
+  proveedorId?: string;
+
+  @ApiProperty({
     description: 'Precio de venta del producto',
     example: 1299.99,
     required: false,

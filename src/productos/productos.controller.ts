@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ProductosService } from './productos.service';
 import { CreateProductoDto, UpdateProductoDto } from './dtos';
-import { ApiOperation, ApiTags, ApiParam } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiParam, ApiBasicAuth } from '@nestjs/swagger';
 import { ApiResponseWithData, ApiResponseWithPagination, PaginationParam, FilteringParamDecorator, SortingParamDecorator } from '../common/decorators';
 import { Producto } from '../common/entities/producto.entity';
 import { ApiResponseDto } from '../common/dto/api-response.dto';
@@ -21,6 +21,7 @@ import { UserRole } from '../auth/enums/user-rol.enum';
 import { FilteringParam, SortingParam } from '../common/helpers/typeorm-helpers';
 import { IsNumber, IsEnum, Min } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 class UpdateStockDto {
   @Type(() => Number)
@@ -34,8 +35,9 @@ class UpdateStockDto {
 
 @ApiTags('Productos')
 @Controller('productos')
+@ApiBearerAuth()
 export class ProductosController {
-  constructor(private readonly productosService: ProductosService) {}
+  constructor(private readonly productosService: ProductosService) { }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
