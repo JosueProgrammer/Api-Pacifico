@@ -7,6 +7,8 @@ export class RequestContext {
         // Initialize request context
     }
 
+    public user: any;
+
     static getCurrentContext(): RequestContext | undefined {
         return this.cls.getStore();
     }

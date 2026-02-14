@@ -14,8 +14,10 @@ Documentación de las 6 fases de mejoras para el sistema POS.
 | 4 | Reportes y Analytics | ✅ Completada | 3-4 días |
 | 5 | Alertas de Stock Bajo | ✅ Completada | 1-2 días |
 | 6 | Exportación PDF/Excel | ✅ Completada | 2-3 días |
+| 7 | Auditoría Avanzada | ⏳ Pendiente | 2-3 días |
+| 8 | Control de Lotes y Vencimientos | ⏳ Pendiente | 4-5 días |
 
-**Tiempo total estimado:** 13-19 días
+**Tiempo total estimado:** 19-27 días
 
 ---
 
