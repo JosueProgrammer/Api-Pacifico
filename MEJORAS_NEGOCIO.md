@@ -13,7 +13,7 @@ Documentación de las 6 fases de mejoras para el sistema POS.
 | 3 | Devoluciones Parciales | ✅ Completada | 2-3 días |
 | 4 | Reportes y Analytics | ✅ Completada | 3-4 días |
 | 5 | Alertas de Stock Bajo | ✅ Completada | 1-2 días |
-| 6 | Exportación PDF/Excel | ⏳ Pendiente | 2-3 días |
+| 6 | Exportación PDF/Excel | ✅ Completada | 2-3 días |
 
 **Tiempo total estimado:** 13-19 días
 
@@ -233,7 +233,7 @@ DELETE /alertas/:id            - Eliminar alerta
 
 ---
 
-## Fase 6: Exportación PDF/Excel ⏳
+## Fase 6: Exportación PDF/Excel ✅
 
 ### Descripción
 Generación de reportes descargables.

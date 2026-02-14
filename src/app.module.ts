@@ -30,6 +30,7 @@ import { DescuentosModule } from './descuentos/descuentos.module';
 import { UnidadesMedidaModule } from './unidades-medida/unidades-medida.module';
 import { CajaModule } from './caja/caja.module';
 import { DevolucionesModule } from './devoluciones/devoluciones.module';
+import { ExportarModule } from './exportar/exportar.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
@@ -82,6 +83,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     UnidadesMedidaModule,
     CajaModule,
     DevolucionesModule,
+    ExportarModule,
   ],
   controllers: [AppController],
   providers: [
