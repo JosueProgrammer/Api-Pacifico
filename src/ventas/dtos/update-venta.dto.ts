@@ -1,11 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString, IsEnum } from 'class-validator';
 
-export enum EstadoVenta {
-  PENDIENTE = 'pendiente',
-  COMPLETADA = 'completada',
-  CANCELADA = 'cancelada',
-}
+import { EstadoVenta } from './create-venta.dto';
+
+export { EstadoVenta };
 
 export class UpdateVentaDto {
   @ApiProperty({

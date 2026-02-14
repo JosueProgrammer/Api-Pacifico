@@ -227,4 +227,31 @@ export class VentasController {
       'Venta cancelada exitosamente',
     );
   }
+
+  @Patch(':id/confirmar')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.VENDEDOR)
+  @ApiOperation({
+    summary: 'Confirmar una venta en borrador',
+    description: 'Confirma una venta en estado borrador, descontando stock y registrando movimientos.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID de la venta',
+    type: String,
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiResponseWithData(
+    Venta,
+    'Venta confirmada exitosamente',
+    HttpStatus.OK,
+  )
+  async confirmar(@Param('id') id: string) {
+    const venta = await this.ventasService.confirmarVenta(id);
+    return ApiResponseDto.Success(
+      venta,
+      'Confirmar Venta',
+      'Venta confirmada exitosamente',
+    );
+  }
 }

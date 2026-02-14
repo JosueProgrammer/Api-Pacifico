@@ -10,8 +10,16 @@ import {
   Min,
   ArrayMinSize,
   MaxLength,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+
+export enum EstadoVenta {
+  PENDIENTE = 'pendiente',
+  COMPLETADA = 'completada',
+  CANCELADA = 'cancelada',
+  BORRADOR = 'borrador',
+}
 
 export class DetalleVentaDto {
   @ApiProperty({
@@ -110,4 +118,14 @@ export class CreateVentaDto {
   @ValidateNested({ each: true })
   @Type(() => DetalleVentaDto)
   detalles: DetalleVentaDto[];
+
+  @ApiProperty({
+    description: 'Estado de la venta (opcional)',
+    enum: EstadoVenta,
+    default: EstadoVenta.COMPLETADA,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(EstadoVenta, { message: 'El estado debe ser uno de los valores permitidos' })
+  estado?: EstadoVenta;
 }

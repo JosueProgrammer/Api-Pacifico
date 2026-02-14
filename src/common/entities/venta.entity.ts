@@ -4,6 +4,7 @@ import { Usuario } from './usuario.entity';
 import { DetalleVenta } from './detalle-venta.entity';
 import { MetodoPago } from './metodo-pago.entity';
 import { Descuento } from './descuento.entity';
+import { EstadoVenta } from '../../ventas/dtos/create-venta.dto';
 
 @Entity({ name: 'ventas' })
 export class Venta {
@@ -34,8 +35,8 @@ export class Venta {
   @Column({ name: 'metodo_pago_id', nullable: true })
   metodoPagoId: string;
 
-  @Column({ type: 'varchar', length: 50, default: 'completada' })
-  estado: string; // pendiente, completada, cancelada
+  @Column({ type: 'varchar', length: 50, default: EstadoVenta.COMPLETADA })
+  estado: string; // pendiente, completada, cancelada, borrador
 
   @Column({ name: 'fecha_venta', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   fechaVenta: Date;

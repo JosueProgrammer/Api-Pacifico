@@ -104,13 +104,18 @@ export class VentasService {
                     );
                 }
                 
-                // Verificar que el stock resultante no sea negativo
-                const stockResultante = producto.stock - detalle.cantidad;
-                if (stockResultante < 0) {
-                    throw new BadRequestException(
-                        `No se puede realizar la venta. El stock de "${producto.nombre}" quedaría en ${stockResultante}`,
-                        ERROR_TITLES.VALIDATION_ERROR,
-                    );
+                
+                // Si NO es borrador, validar que el stock resultante no sea negativo
+                const esBorrador = createVentaDto.estado === EstadoVenta.BORRADOR;
+                
+                if (!esBorrador) {
+                    const stockResultante = producto.stock - detalle.cantidad;
+                    if (stockResultante < 0) {
+                        throw new BadRequestException(
+                            `No se puede realizar la venta. El stock de "${producto.nombre}" quedaría en ${stockResultante}`,
+                            ERROR_TITLES.VALIDATION_ERROR,
+                        );
+                    }
                 }
 
                 const precioUnitario = Number(producto.precioVenta);
@@ -167,7 +172,7 @@ export class VentasService {
                 descuento: descuentoGeneral,
                 impuesto: montoImpuesto,
                 total,
-                estado: 'completada',
+                estado: createVentaDto.estado || EstadoVenta.COMPLETADA,
                 descuentoId: idDescuentoAplicado,
                 fechaVenta: new Date(),
             });
@@ -188,6 +193,8 @@ export class VentasService {
 
                 await queryRunner.manager.save(DetalleVenta, detalleVenta);
 
+            // Si NO es borrador, actualizar stock y registrar movimientos
+            if (createVentaDto.estado !== EstadoVenta.BORRADOR) {
                 // Actualizar stock del producto
                 detalle.producto.stock -= detalle.cantidad;
                 detalle.producto.fechaActualizacion = new Date();
@@ -202,12 +209,13 @@ export class VentasService {
                     referenciaId: ventaGuardada.id,
                     usuarioId,
                 });
-            }
 
-            // Incrementar uso del descuento si aplica
-            if (idDescuentoAplicado) {
-                await this.descuentosService.incrementarUso(idDescuentoAplicado, queryRunner);
+                // Incrementar uso del descuento si aplica
+                if (idDescuentoAplicado) {
+                    await this.descuentosService.incrementarUso(idDescuentoAplicado, queryRunner);
+                }
             }
+        }
 
             await queryRunner.commitTransaction();
 
@@ -293,6 +301,75 @@ export class VentasService {
         } catch (error) {
             handleDBErrors(error, `Venta con ID "${id}" no encontrada`);
             throw error;
+        }
+    }
+
+    async confirmarVenta(id: string): Promise<Venta> {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            const venta = await this.findOne(id);
+
+            if (venta.estado !== EstadoVenta.BORRADOR) {
+                throw new BadRequestException(
+                    `La venta no está en estado borrador. Estado actual: ${venta.estado}`,
+                    ERROR_TITLES.VALIDATION_ERROR,
+                );
+            }
+
+            // Procesar cada detalle para descontar stock
+            for (const detalle of venta.detalleVentas) {
+                const producto = await this.productoRepository.findOne({
+                     where: { id: detalle.productoId },
+                });
+
+                if (!producto) {
+                    throw new NotFoundException(`Producto ${detalle.productoId} no encontrado`);
+                }
+
+                // Validar stock
+                if (producto.stock < detalle.cantidad) {
+                    throw new BadRequestException(
+                         `Stock insuficiente para el producto "${producto.nombre}". Stock disponible: ${producto.stock}, solicitado: ${detalle.cantidad}`,
+                         ERROR_TITLES.VALIDATION_ERROR,
+                    );
+                }
+
+                // Actualizar stock
+                producto.stock -= detalle.cantidad;
+                producto.fechaActualizacion = new Date();
+                await queryRunner.manager.save(Producto, producto);
+
+                // Registrar movimiento inventario
+                await this.inventarioService.registrarMovimientoInterno(queryRunner, {
+                     productoId: producto.id,
+                     tipoMovimiento: TipoMovimiento.SALIDA,
+                     cantidad: detalle.cantidad,
+                     motivo: `Confirmación Venta ${venta.numeroFactura}`,
+                     referenciaId: venta.id,
+                     usuarioId: venta.usuarioId,
+                });
+            }
+
+            // Incrementar uso descuento si aplica
+            if (venta.descuentoId) {
+                await this.descuentosService.incrementarUso(venta.descuentoId, queryRunner);
+            }
+
+            // Actualizar estado venta
+            venta.estado = EstadoVenta.COMPLETADA;
+            await queryRunner.manager.save(Venta, venta);
+
+            await queryRunner.commitTransaction();
+            return this.findOne(id);
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+             handleDBErrors(error, 'Error al confirmar la venta');
+            throw error;
+        } finally {
+            await queryRunner.release();
         }
     }
 
