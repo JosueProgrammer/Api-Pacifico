@@ -20,9 +20,22 @@ import { CategoriasModule } from './categorias/categorias.module';
 import { ProductosModule } from './productos/productos.module';
 import { ClienteModule } from './cliente/cliente.module';
 import { ProveedoresModule } from './proveedores/proveedores.module';
+import { VentasModule } from './ventas/ventas.module';
+import { ComprasModule } from './compras/compras.module';
+import { MetodosPagoModule } from './metodos-pago/metodos-pago.module';
+import { InventarioModule } from './inventario/inventario.module';
+import { DescuentosModule } from './descuentos/descuentos.module';
+import { UnidadesMedidaModule } from './unidades-medida/unidades-medida.module';
+import { CajaModule } from './caja/caja.module';
+import { DevolucionesModule } from './devoluciones/devoluciones.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 10,
+    }]),
     ConfigModule.forRoot({
       isGlobal: true,
       validate: (config) => {
@@ -57,6 +70,14 @@ import { ProveedoresModule } from './proveedores/proveedores.module';
     ProductosModule,
     ClienteModule,
     ProveedoresModule,
+    VentasModule,
+    ComprasModule,
+    MetodosPagoModule,
+    InventarioModule,
+    DescuentosModule,
+    UnidadesMedidaModule,
+    CajaModule,
+    DevolucionesModule,
   ],
   controllers: [AppController],
   providers: [
@@ -68,6 +89,10 @@ import { ProveedoresModule } from './proveedores/proveedores.module';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
     {
       provide: APP_FILTER,

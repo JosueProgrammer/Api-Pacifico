@@ -96,12 +96,52 @@ export const ERROR_MESSAGES = {
   CATEGORIAS_NOT_FOUND: 'Error al obtener las categorías',
   CLIENTES_NOT_FOUND: 'Error al obtener los clientes',
   CLIENTE_NOT_UPDATED: 'Error al actualizar el cliente',
+  CLIENTE_NOT_CREATED: 'Error al crear el cliente',
+  CLIENTE_NOT_DELETED: 'Error al eliminar el cliente',
   
   // Mensajes de productos
   PRODUCTO_NOT_CREATED: 'Error al crear el producto',
   PRODUCTO_NOT_UPDATED: 'Error al actualizar el producto',
   PRODUCTO_NOT_DELETED: 'Error al eliminar el producto',
   PRODUCTOS_NOT_FOUND: 'Error al obtener los productos',
+
+  // Mensajes de ventas
+  VENTA_NOT_CREATED: 'Error al crear la venta',
+  VENTA_NOT_UPDATED: 'Error al actualizar la venta',
+  VENTA_NOT_DELETED: 'Error al eliminar la venta',
+  VENTAS_NOT_FOUND: 'Error al obtener las ventas',
+
+  // Mensajes de compras
+  COMPRA_NOT_CREATED: 'Error al crear la compra',
+  COMPRA_NOT_UPDATED: 'Error al actualizar la compra',
+  COMPRA_NOT_DELETED: 'Error al eliminar la compra',
+  COMPRAS_NOT_FOUND: 'Error al obtener las compras',
+
+  // Mensajes de métodos de pago
+  METODO_PAGO_NOT_CREATED: 'Error al crear el método de pago',
+  METODO_PAGO_NOT_UPDATED: 'Error al actualizar el método de pago',
+  METODO_PAGO_NOT_DELETED: 'Error al eliminar el método de pago',
+  METODOS_PAGO_NOT_FOUND: 'Error al obtener los métodos de pago',
+
+  // Mensajes de inventario
+  INVENTARIO_NOT_CREATED: 'Error al registrar el movimiento de inventario',
+  INVENTARIO_NOT_FOUND: 'Error al obtener los movimientos de inventario',
+
+  // Mensajes de descuentos
+  DESCUENTO_NOT_CREATED: 'Error al crear el descuento',
+  DESCUENTO_NOT_UPDATED: 'Error al actualizar el descuento',
+  DESCUENTO_NOT_DELETED: 'Error al eliminar el descuento',
+  DESCUENTOS_NOT_FOUND: 'Error al obtener los descuentos',
+
+  // Mensajes de caja
+  CAJA_NOT_OPENED: 'Error al abrir la caja',
+  CAJA_NOT_CLOSED: 'Error al cerrar la caja',
+  CAJA_NOT_FOUND: 'Caja no encontrada',
+  CAJA_ALREADY_OPEN: 'Ya tienes una caja abierta. Debes cerrarla antes de abrir una nueva',
+  CAJA_NOT_OPEN: 'No tienes una caja abierta',
+  CAJA_ALREADY_CLOSED: 'La caja ya está cerrada',
+  MOVIMIENTO_CAJA_NOT_CREATED: 'Error al registrar el movimiento de caja',
+  MOVIMIENTOS_CAJA_NOT_FOUND: 'Error al obtener los movimientos de caja',
 } as const;
 
 /**

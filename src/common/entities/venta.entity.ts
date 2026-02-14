@@ -3,6 +3,7 @@ import { Cliente } from './cliente.entity';
 import { Usuario } from './usuario.entity';
 import { DetalleVenta } from './detalle-venta.entity';
 import { MetodoPago } from './metodo-pago.entity';
+import { Descuento } from './descuento.entity';
 
 @Entity({ name: 'ventas' })
 export class Venta {
@@ -53,6 +54,13 @@ export class Venta {
   @ManyToOne(() => MetodoPago, { nullable: true })
   @JoinColumn({ name: 'metodo_pago_id' })
   metodoPago: MetodoPago;
+  
+  @Column({ name: 'descuento_id', nullable: true })
+  descuentoId: string | null;
+
+  @ManyToOne(() => Descuento, { nullable: true })
+  @JoinColumn({ name: 'descuento_id' })
+  descuentoEntidad: Descuento;
 
   @OneToMany(() => DetalleVenta, (detalleVenta: DetalleVenta) => detalleVenta.venta)
   detalleVentas: DetalleVenta[];
