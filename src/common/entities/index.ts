@@ -18,4 +18,5 @@ export * from './caja.entity';
 export * from './movimiento-caja.entity';
 export * from './devolucion.entity';
 export * from './detalle-devolucion.entity';
+export * from './alerta.entity';
 

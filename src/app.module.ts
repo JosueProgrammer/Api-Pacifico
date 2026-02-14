@@ -22,6 +22,8 @@ import { ClienteModule } from './cliente/cliente.module';
 import { ProveedoresModule } from './proveedores/proveedores.module';
 import { VentasModule } from './ventas/ventas.module';
 import { ComprasModule } from './compras/compras.module';
+import { ReportesModule } from './reportes/reportes.module';
+import { AlertasModule } from './alertas/alertas.module';
 import { MetodosPagoModule } from './metodos-pago/metodos-pago.module';
 import { InventarioModule } from './inventario/inventario.module';
 import { DescuentosModule } from './descuentos/descuentos.module';
@@ -72,6 +74,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     ProveedoresModule,
     VentasModule,
     ComprasModule,
+    ReportesModule,
+    AlertasModule,
     MetodosPagoModule,
     InventarioModule,
     DescuentosModule,

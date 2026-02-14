@@ -11,8 +11,8 @@ Documentación de las 6 fases de mejoras para el sistema POS.
 | 1 | Unidades de Medida | ✅ Completada | 2-3 días |
 | 2 | Gestión de Caja/Arqueo | ✅ Completada | 3-4 días |
 | 3 | Devoluciones Parciales | ✅ Completada | 2-3 días |
-| 4 | Reportes y Analytics | ⏳ Pendiente | 3-4 días |
-| 5 | Alertas de Stock Bajo | ⏳ Pendiente | 1-2 días |
+| 4 | Reportes y Analytics | ✅ Completada | 3-4 días |
+| 5 | Alertas de Stock Bajo | ✅ Completada | 1-2 días |
 | 6 | Exportación PDF/Excel | ⏳ Pendiente | 2-3 días |
 
 **Tiempo total estimado:** 13-19 días
@@ -148,109 +148,88 @@ GET    /devoluciones/venta/:ventaId/disponible - Productos disponibles para devo
 ## Fase 4: Reportes y Analytics ⏳
 
 ### Descripción
-Dashboard y reportes para análisis del negocio.
+Sistema de reportes para obtener insights del negocio.
 
-### Endpoints a Implementar
+### Cambios Realizados
+- Nuevo módulo `ReportesModule` en `/reportes`
+- Servicios de agregación de datos para Ventas, Productos y Compras
+- Endpoints optimizados con QueryBuilder
+- Protección de rutas con roles (ADMINISTRADOR, SUPERVISOR)
+
+### Endpoints Implementados
 
 #### Dashboard General
 ```
 GET /reportes/dashboard
 ```
-Respuesta:
-```json
-{
-  "ventasHoy": 15000.00,
-  "ventasSemana": 85000.00,
-  "ventasMes": 320000.00,
-  "ticketPromedio": 450.00,
-  "productosVendidosHoy": 45,
-  "productosStockBajo": 8,
-  "productosAgotados": 2
-}
-```
+Retorna:
+- Ventas de hoy, del mes
+- Ticket promedio
+- Productos vendidos hoy
+- Alertas de stock bajo y agotado
 
 #### Ventas por Período
 ```
 GET /reportes/ventas?fechaInicio=2024-01-01&fechaFin=2024-01-31&agrupar=dia
 ```
-Respuesta con datos agrupados por día/semana/mes.
+- Soporta agrupación por día, semana, mes, año
 
 #### Productos Más Vendidos
 ```
-GET /reportes/productos-mas-vendidos?limite=10&fechaInicio=2024-01-01
+GET /reportes/productos-mas-vendidos?limite=10
 ```
-Respuesta:
-```json
-[
-  {
-    "productoId": "uuid",
-    "nombre": "Producto X",
-    "cantidadVendida": 150,
-    "totalVentas": 45000.00,
-    "porcentajeVentas": 12.5
-  }
-]
-```
+- Ranking por cantidad vendida y monto total
 
 #### Ventas por Categoría
 ```
-GET /reportes/ventas-por-categoria?fechaInicio=2024-01-01
+GET /reportes/ventas-por-categoria
 ```
+- Distribución porcentual de ventas por categoría
 
 #### Margen de Ganancia
 ```
-GET /reportes/margen-ganancia?fechaInicio=2024-01-01
+GET /reportes/margen-ganancia
 ```
-Respuesta:
-```json
-{
-  "ingresosTotales": 500000.00,
-  "costoProductos": 350000.00,
-  "margenBruto": 150000.00,
-  "porcentajeMargen": 30.0
-}
-```
+- Cálculo de ingresos vs costos estimados
 
-#### Comparativa de Períodos
+#### Comparativa
 ```
 GET /reportes/comparativa?periodo=mes
 ```
-Compara mes actual vs mes anterior.
+- Compara período actual vs anterior (variación % en dinero y cantidad)
 
 ---
 
-## Fase 5: Alertas de Stock Bajo ⏳
+## Fase 5: Alertas de Stock Bajo ✅
 
 ### Descripción
 Sistema de notificaciones para productos con stock bajo.
 
-### Entidad a Crear
+### Cambios Realizados
+- Nueva entidad `Alerta` para tracking de alertas
+- Nuevo módulo `AlertasModule` en `/alertas`
+- Servicio con generación automática de alertas
+- Integración lista para conectar con inventario
+- Migración `AddAlertas` creada y ejecutada
 
-#### `Alerta`
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| id | uuid | Identificador único |
-| tipo | varchar | 'stock_bajo', 'stock_agotado', 'descuento_expira' |
-| titulo | varchar | Título de la alerta |
-| mensaje | text | Descripción detallada |
-| entidadId | uuid | ID del producto/descuento relacionado |
-| entidadTipo | varchar | 'producto', 'descuento' |
-| leida | boolean | Si fue vista |
-| fechaCreacion | timestamp | Cuándo se generó |
-
-### Endpoints a Implementar
+### Endpoints Implementados
 ```
-GET    /alertas                - Listar alertas pendientes
+GET    /alertas                - Listar alertas con filtros
 GET    /alertas/no-leidas      - Contador de alertas no leídas
-PATCH  /alertas/:id/leer       - Marcar como leída
-PATCH  /alertas/leer-todas     - Marcar todas como leídas
+PATCH  /alertas/:id/marcar-leida - Marcar como leída
 DELETE /alertas/:id            - Eliminar alerta
 ```
 
-### Implementación
-- Job programado (cron) que verifica stock diariamente
-- Integración con nodemailer para envío de emails (opcional)
-- Endpoint para obtener productos con stock bajo sin crear alertas
+### Tipos de Alertas Soportados
+- `stock_bajo`: Cuando stock ≤ stockMinimo
+- `stock_agotado`: Cuando stock = 0
+- `descuento_expira`: Para descuentos próximos a vencer (preparado)
+
+### Características
+- Prevención de duplicados (no crea alertas si ya existe una no leída)
+- Filtrado por tipo y estado de lectura
+- Paginación de resultados
+- Limpieza automática de alertas antiguas leídas
 
 ---
 
@@ -293,7 +272,7 @@ src/exportar/
 ## Orden de Implementación Recomendado
 
 ```
-Fase 1 ✅ → Fase 2 ✅ → Fase 3 ✅ → Fase 4 → Fase 5 → Fase 6
+Fase 1 ✅ → Fase 2 ✅ → Fase 3 ✅ → Fase 4 ✅ → Fase 5 ✅ → Fase 6
              │         │         │
              │         │         └── Reportes necesarios para exportar
              │         └── Devoluciones afectan reportes
