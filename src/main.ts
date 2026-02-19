@@ -6,7 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import YAML from 'yamljs';
 import helmet from 'helmet';
-import { AllExceptionsFilter } from './common/filters/all-exception.filter';
+
 import { TransformResponseInterceptor } from './common/interceptor/transform-response.interceptor';
 import { LoggingInterceptor } from './common/interceptor/logging.interceptor';
 
@@ -58,8 +58,6 @@ async function bootstrap() {
     }),
   );
 
-  // Usar filtro global de excepciones
-  app.useGlobalFilters(new AllExceptionsFilter());
 
   // Usar interceptores globales
   app.useGlobalInterceptors(

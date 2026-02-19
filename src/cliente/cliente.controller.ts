@@ -5,7 +5,6 @@ import { ApiResponseWithData, FilteringParamDecorator, PaginationParam, Roles, S
 import { ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { ClienteResponseDto } from './dto/cliente-response.dto';
 import { UserRole } from 'src/auth/enums/user-rol.enum';
-import { userInfo } from 'os';
 import { ApiResponseDto } from 'src/common/dto';
 import { FilteringParam, SortingParam } from 'src/common/helpers';
 import { Cliente } from 'src/common/entities';
@@ -51,7 +50,7 @@ export class ClienteController {
   )
   async findAll(
     @PaginationParam() pagination: any,
-    @FilteringParamDecorator(['nombre', 'correo', 'telefono']) filter?: FilteringParam<Cliente> | null,
+    @FilteringParamDecorator(['nombre', 'correo', 'telefono', 'activo']) filter?: FilteringParam<Cliente> | null,
     @SortingParamDecorator(['nombre', 'correo', 'fechaCreacion']) sorting?: SortingParam<Cliente> | null,
   ) {
     return await this.clienteService.findAll(pagination, filter, sorting);
@@ -115,6 +114,50 @@ export class ClienteController {
     );
   }
 
+  @Patch(':id/activate')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR)
+  @ApiOperation({
+    summary: 'Activar un cliente',
+    description: 'Activa un cliente que estaba desactivado.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del cliente',
+    type: String,
+    example: 'a3f1c2b4-8e9d-4f2a-bc1e-123456789abc',
+  })
+  async activate(@Param('id') id: string) {
+    const cliente = await this.clienteService.activate(id);
+    return ApiResponseDto.Success(
+      cliente,
+      'Activar Cliente',
+      'Cliente activado exitosamente',
+    );
+  }
+
+  @Patch(':id/deactivate')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR)
+  @ApiOperation({
+    summary: 'Desactivar un cliente',
+    description: 'Desactiva un cliente sin eliminarlo del sistema.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del cliente',
+    type: String,
+    example: 'a3f1c2b4-8e9d-4f2a-bc1e-123456789abc',
+  })
+  async deactivate(@Param('id') id: string) {
+    const cliente = await this.clienteService.deactivate(id);
+    return ApiResponseDto.Success(
+      cliente,
+      'Desactivar Cliente',
+      'Cliente desactivado exitosamente',
+    );
+  }
+
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   @Roles(UserRole.ADMINISTRADOR)
@@ -142,6 +185,4 @@ export class ClienteController {
       'Cliente eliminado exitosamente',
     );
   }
-
-
 }

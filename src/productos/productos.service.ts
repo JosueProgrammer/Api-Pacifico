@@ -1,295 +1,170 @@
-import {
-    Injectable,
-    NotFoundException,
-    BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Producto } from '../common/entities/producto.entity';
 import { Categoria } from '../common/entities/categoria.entity';
 import { Proveedor } from '../common/entities/proveedor.entity';
 import { CreateProductoDto, UpdateProductoDto } from './dtos';
-import {
-    getWhereConditions,
-    getSortingOrder,
-    handleDBErrors,
-    FilteringParam,
-    SortingParam,
-} from '../common/helpers/typeorm-helpers';
-import { ERROR_MESSAGES, ERROR_TITLES } from '../common/constants/error-messages.constants';
-import { ApiPaginatedMetaDto } from '../common/dto/api-paginated-meta.dto';
-import { ApiPaginatedResponseDto } from '../common/dto/api-paginated-response.dto';
 import { PaginationParamsDto } from '../common/dto/pagination-param.dto';
+import { FilteringParam, SortingParam, getWhereConditions, getSortingOrder } from '../common/helpers/typeorm-helpers';
+import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 
 @Injectable()
 export class ProductosService {
-    constructor(
-        @InjectRepository(Producto)
-        private readonly productoRepository: Repository<Producto>,
-        @InjectRepository(Categoria)
-        private readonly categoriaRepository: Repository<Categoria>,
-        @InjectRepository(Proveedor)
-        private readonly proveedorRepository: Repository<Proveedor>,
-    ) { }
+  private readonly logger = new Logger(ProductosService.name);
 
-    async create(createProductoDto: CreateProductoDto): Promise<Producto> {
-        try {
-            // Verificar si ya existe un producto con el mismo código de barras
-            if (createProductoDto.codigoBarras) {
-                const productoExistente = await this.productoRepository.findOne({
-                    where: { codigoBarras: createProductoDto.codigoBarras },
-                });
+  constructor(
+    @InjectRepository(Producto)
+    private readonly productoRepo: Repository<Producto>,
+    @InjectRepository(Categoria)
+    private readonly categoriaRepo: Repository<Categoria>,
+    @InjectRepository(Proveedor)
+    private readonly proveedorRepo: Repository<Proveedor>,
+  ) { }
 
-                if (productoExistente) {
-                    throw new BadRequestException(
-                        `Ya existe un producto con el código de barras "${createProductoDto.codigoBarras}"`,
-                        ERROR_TITLES.CONFLICT_ERROR,
-                    );
-                }
-            }
+  async create(createProductoDto: CreateProductoDto): Promise<Producto> {
+    const { categoriaId, proveedorId, codigoBarras, ...productoData } = createProductoDto;
 
-            // Verificar si la categoría existe (si se proporciona)
-            if (createProductoDto.categoriaId) {
-                const categoria = await this.categoriaRepository.findOne({
-                    where: { id: createProductoDto.categoriaId },
-                });
-
-                if (!categoria) {
-                    throw new NotFoundException(
-                        `Categoría con ID "${createProductoDto.categoriaId}" no encontrada`,
-                        ERROR_TITLES.NOT_FOUND_ERROR,
-                    );
-                }
-            }
-
-            // Verificar si el proveedor existe (si se proporciona)
-            if (createProductoDto.proveedorId) {
-                const proveedor = await this.proveedorRepository.findOne({
-                    where: { id: createProductoDto.proveedorId },
-                });
-
-                if (!proveedor) {
-                    throw new NotFoundException(
-                        `Proveedor con ID "${createProductoDto.proveedorId}" no encontrado`,
-                        ERROR_TITLES.NOT_FOUND_ERROR,
-                    );
-                }
-            }
-
-            const producto = this.productoRepository.create({
-                ...createProductoDto,
-                stock: createProductoDto.stock ?? 0,
-                stockMinimo: createProductoDto.stockMinimo ?? 0,
-                activo: createProductoDto.activo ?? true,
-            });
-
-            return await this.productoRepository.save(producto);
-        } catch (error) {
-            handleDBErrors(error, ERROR_MESSAGES.PRODUCTO_NOT_CREATED);
-            throw error;
-        }
+    if (categoriaId) {
+      const categoria = await this.categoriaRepo.findOne({ where: { id: categoriaId } });
+      if (!categoria) {
+        throw new NotFoundException(`Categoría con ID '${categoriaId}' no encontrada`);
+      }
     }
 
-    async findAll(
-        pagination: PaginationParamsDto,
-        filter?: FilteringParam<Producto> | null,
-        sorting?: SortingParam<Producto> | null,
-    ): Promise<ApiPaginatedResponseDto<Producto>> {
-        try {
-            const { page, limit } = pagination;
-            const skip = (page - 1) * limit;
-
-            // Construir condiciones de filtrado
-            const whereConditions = getWhereConditions(filter ?? null);
-
-            // Aplicar ordenamiento
-            const order = {
-                nombre: 'ASC' as const,
-                ...getSortingOrder(sorting ?? null),
-            };
-
-            // Obtener total
-            const total = await this.productoRepository.count({
-                where: whereConditions,
-            });
-
-            // Obtener registros paginados
-            const productos = await this.productoRepository.find({
-                where: whereConditions,
-                order,
-                skip,
-                take: limit,
-                relations: ['categoria', 'proveedor'],
-            });
-
-            const meta: ApiPaginatedMetaDto = {
-                currentPage: page,
-                itemsPerPage: limit,
-                totalItems: total,
-                totalPages: Math.ceil(total / limit),
-                hasNextPage: page < Math.ceil(total / limit),
-                hasPreviousPage: page > 1,
-            };
-
-            return ApiPaginatedResponseDto.Success(
-                productos,
-                meta,
-                'Productos obtenidos exitosamente',
-                'Lista de productos',
-            );
-        } catch (error) {
-            handleDBErrors(error, ERROR_MESSAGES.PRODUCTOS_NOT_FOUND);
-            throw error;
-        }
+    if (proveedorId) {
+      const proveedor = await this.proveedorRepo.findOne({ where: { id: proveedorId } });
+      if (!proveedor) {
+        throw new NotFoundException(`Proveedor con ID '${proveedorId}' no encontrado`);
+      }
     }
 
-    async findOne(id: string): Promise<Producto> {
-        try {
-            const producto = await this.productoRepository.findOne({
-                where: { id },
-                relations: ['categoria', 'proveedor'],
-            });
-
-            if (!producto) {
-                throw new NotFoundException(
-                    `Producto con ID "${id}" no encontrado`,
-                    ERROR_TITLES.NOT_FOUND_ERROR,
-                );
-            }
-
-            return producto;
-        } catch (error) {
-            handleDBErrors(error, `Producto con ID "${id}" no encontrado`);
-            throw error;
-        }
+    if (codigoBarras) {
+      const existingProduct = await this.productoRepo.findOne({ where: { codigoBarras } });
+      if (existingProduct) {
+        throw new ConflictException(`Ya existe un producto con el código de barras '${codigoBarras}'`);
+      }
     }
 
-    async update(id: string, updateProductoDto: UpdateProductoDto): Promise<Producto> {
-        try {
-            const producto = await this.findOne(id);
+    const producto = this.productoRepo.create({
+      ...productoData,
+      codigoBarras,
+      categoriaId,
+      proveedorId,
+    });
 
-            // Verificar si se está actualizando el código de barras y si ya existe
-            if (updateProductoDto.codigoBarras && updateProductoDto.codigoBarras !== producto.codigoBarras) {
-                const productoExistente = await this.productoRepository.findOne({
-                    where: { codigoBarras: updateProductoDto.codigoBarras },
-                });
+    return this.productoRepo.save(producto);
+  }
 
-                if (productoExistente) {
-                    throw new BadRequestException(
-                        `Ya existe un producto con el código de barras "${updateProductoDto.codigoBarras}"`,
-                        ERROR_TITLES.CONFLICT_ERROR,
-                    );
-                }
-            }
+  async findAll(
+    pagination: { page: number; limit: number },
+    filter?: FilteringParam<Producto> | null,
+    sorting?: SortingParam<Producto> | null,
+  ): Promise<PaginatedResponseDto<Producto>> {
+    const { page, limit } = pagination;
+    const where = getWhereConditions(filter ?? null);
+    const order = getSortingOrder(sorting ?? null);
 
-            // Verificar si la categoría existe (si se proporciona)
-            if (updateProductoDto.categoriaId) {
-                const categoria = await this.categoriaRepository.findOne({
-                    where: { id: updateProductoDto.categoriaId },
-                });
+    const [items, total] = await this.productoRepo.findAndCount({
+      where,
+      order,
+      take: limit,
+      skip: (page - 1) * limit,
+      relations: ['categoria', 'proveedor'],
+    });
 
-                if (!categoria) {
-                    throw new NotFoundException(
-                        `Categoría con ID "${updateProductoDto.categoriaId}" no encontrada`,
-                        ERROR_TITLES.NOT_FOUND_ERROR,
-                    );
-                }
-            }
+    const totalPages = Math.ceil(total / limit);
+    return PaginatedResponseDto.PaginatedSuccess(
+      items,
+      {
+        currentPage: page,
+        itemsPerPage: limit,
+        totalItems: total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+      'Listar Productos',
+      'Lista de productos obtenida exitosamente',
+    );
+  }
 
-            // Verificar si el proveedor existe (si se proporciona)
-            if (updateProductoDto.proveedorId) {
-                const proveedor = await this.proveedorRepository.findOne({
-                    where: { id: updateProductoDto.proveedorId },
-                });
+  async findOne(id: string): Promise<Producto> {
+    const producto = await this.productoRepo.findOne({
+      where: { id },
+      relations: ['categoria', 'proveedor'],
+    });
 
-                if (!proveedor) {
-                    throw new NotFoundException(
-                        `Proveedor con ID "${updateProductoDto.proveedorId}" no encontrado`,
-                        ERROR_TITLES.NOT_FOUND_ERROR,
-                    );
-                }
-            }
-
-            // Actualizar el producto
-            Object.assign(producto, updateProductoDto);
-            producto.fechaActualizacion = new Date();
-            return await this.productoRepository.save(producto);
-        } catch (error) {
-            handleDBErrors(error, ERROR_MESSAGES.PRODUCTO_NOT_UPDATED);
-            throw error;
-        }
+    if (!producto) {
+      throw new NotFoundException(`Producto con ID '${id}' no encontrado`);
     }
 
-    async remove(id: string): Promise<void> {
-        try {
-            const producto = await this.findOne(id);
+    return producto;
+  }
 
-            // Verificar si el producto tiene ventas asociadas
-            const productoConVentas = await this.productoRepository.findOne({
-                where: { id },
-                relations: ['detalleVentas'],
-            });
+  async update(id: string, updateProductoDto: UpdateProductoDto): Promise<Producto> {
+    const producto = await this.findOne(id);
+    const { categoriaId, proveedorId, codigoBarras, ...productoData } = updateProductoDto;
 
-            if (productoConVentas?.detalleVentas && productoConVentas.detalleVentas.length > 0) {
-                throw new BadRequestException(
-                    `No se puede eliminar el producto porque tiene ${productoConVentas.detalleVentas.length} venta(s) asociada(s)`,
-                    ERROR_TITLES.CONFLICT_ERROR,
-                );
-            }
-
-            await this.productoRepository.remove(producto);
-        } catch (error) {
-            handleDBErrors(error, ERROR_MESSAGES.PRODUCTO_NOT_DELETED);
-            throw error;
-        }
+    if (categoriaId) {
+      const categoria = await this.categoriaRepo.findOne({ where: { id: categoriaId } });
+      if (!categoria) {
+        throw new NotFoundException(`Categoría con ID '${categoriaId}' no encontrada`);
+      }
+      producto.categoriaId = categoriaId;
     }
 
-    async activate(id: string): Promise<Producto> {
-        try {
-            const producto = await this.findOne(id);
-            producto.activo = true;
-            producto.fechaActualizacion = new Date();
-            return await this.productoRepository.save(producto);
-        } catch (error) {
-            handleDBErrors(error, ERROR_MESSAGES.PRODUCTO_NOT_UPDATED);
-            throw error;
-        }
+    if (proveedorId) {
+      const proveedor = await this.proveedorRepo.findOne({ where: { id: proveedorId } });
+      if (!proveedor) {
+        throw new NotFoundException(`Proveedor con ID '${proveedorId}' no encontrado`);
+      }
+      producto.proveedorId = proveedorId;
     }
 
-    async deactivate(id: string): Promise<Producto> {
-        try {
-            const producto = await this.findOne(id);
-            producto.activo = false;
-            producto.fechaActualizacion = new Date();
-            return await this.productoRepository.save(producto);
-        } catch (error) {
-            handleDBErrors(error, ERROR_MESSAGES.PRODUCTO_NOT_UPDATED);
-            throw error;
-        }
+    if (codigoBarras && codigoBarras !== producto.codigoBarras) {
+      const existingProduct = await this.productoRepo.findOne({ where: { codigoBarras } });
+      if (existingProduct) {
+        throw new ConflictException(`Ya existe un producto con el código de barras '${codigoBarras}'`);
+      }
+      producto.codigoBarras = codigoBarras;
     }
 
-    async updateStock(id: string, cantidad: number, tipo: 'incrementar' | 'decrementar'): Promise<Producto> {
-        try {
-            const producto = await this.findOne(id);
+    Object.assign(producto, productoData);
 
-            if (tipo === 'incrementar') {
-                producto.stock += cantidad;
-            } else {
-                if (producto.stock < cantidad) {
-                    throw new BadRequestException(
-                        `No hay suficiente stock. Stock disponible: ${producto.stock}`,
-                        ERROR_TITLES.VALIDATION_ERROR,
-                    );
-                }
-                producto.stock -= cantidad;
-            }
+    return this.productoRepo.save(producto);
+  }
 
-            producto.fechaActualizacion = new Date();
-            return await this.productoRepository.save(producto);
-        } catch (error) {
-            handleDBErrors(error, ERROR_MESSAGES.PRODUCTO_NOT_UPDATED);
-            throw error;
-        }
-    }
+  async remove(id: string): Promise<void> {
+    const producto = await this.findOne(id);
+    // TODO: Verify dependencies (e.g. sales) before deleting?
+    await this.productoRepo.remove(producto);
+  }
+
+  async activate(id: string): Promise<Producto> {
+    const producto = await this.findOne(id);
+    producto.activo = true;
+    return this.productoRepo.save(producto);
+  }
+
+  async deactivate(id: string): Promise<Producto> {
+    const producto = await this.findOne(id);
+    producto.activo = false;
+    return this.productoRepo.save(producto);
+  }
+
+  async updateStock(id: string, cantidad: number, tipo: 'incrementar' | 'decrementar'): Promise<Producto> {
+      const producto = await this.findOne(id);
+      
+      if (tipo === 'incrementar') {
+          producto.stock += cantidad;
+      } else {
+          if (producto.stock < cantidad) {
+              throw new BadRequestException('Stock insuficiente para realizar la operación');
+          }
+          producto.stock -= cantidad;
+      }
+
+      return this.productoRepo.save(producto);
+  }
 }
-

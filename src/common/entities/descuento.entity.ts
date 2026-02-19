@@ -25,5 +25,11 @@ export class Descuento {
 
   @Column({ name: 'fecha_creacion', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   fechaCreacion: Date;
+
+  @Column({ name: 'limite_uso', type: 'int', nullable: true })
+  limiteUso: number;
+
+  @Column({ name: 'veces_usado', type: 'int', default: 0 })
+  vecesUsado: number;
 }
 

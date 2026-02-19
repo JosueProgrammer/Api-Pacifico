@@ -69,6 +69,15 @@ export class CreateProductoDto {
   proveedorId?: string;
 
   @ApiProperty({
+    description: 'ID de la unidad de medida del producto',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID('4', { message: 'El ID de la unidad de medida debe ser un UUID válido' })
+  unidadMedidaId?: string;
+
+  @ApiProperty({
     description: 'Precio de venta del producto',
     example: 1299.99,
     required: true,
@@ -93,28 +102,28 @@ export class CreateProductoDto {
   precioCompra?: number;
 
   @ApiProperty({
-    description: 'Cantidad de stock disponible',
-    example: 50,
+    description: 'Cantidad de stock disponible (soporta decimales para unidades de peso/volumen)',
+    example: 50.5,
     required: false,
     default: 0,
     minimum: 0,
   })
   @Type(() => Number)
   @IsOptional()
-  @IsNumber({}, { message: 'El stock debe ser un número' })
+  @IsNumber({ maxDecimalPlaces: 3 }, { message: 'El stock debe ser un número con máximo 3 decimales' })
   @Min(0, { message: 'El stock debe ser mayor o igual a 0' })
   stock?: number;
 
   @ApiProperty({
-    description: 'Stock mínimo requerido para alertas',
-    example: 10,
+    description: 'Stock mínimo requerido para alertas (soporta decimales)',
+    example: 10.5,
     required: false,
     default: 0,
     minimum: 0,
   })
   @Type(() => Number)
   @IsOptional()
-  @IsNumber({}, { message: 'El stock mínimo debe ser un número' })
+  @IsNumber({ maxDecimalPlaces: 3 }, { message: 'El stock mínimo debe ser un número con máximo 3 decimales' })
   @Min(0, { message: 'El stock mínimo debe ser mayor o igual a 0' })
   stockMinimo?: number;
 

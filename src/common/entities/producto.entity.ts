@@ -4,6 +4,7 @@ import { DetalleVenta } from './detalle-venta.entity';
 import { DetalleCompra } from './detalle-compra.entity';
 import { Inventario } from './inventario.entity';
 import { Proveedor } from './proveedor.entity';
+import { UnidadMedida } from './unidad-medida.entity';
 
 @Entity({ name: 'productos' })
 export class Producto {
@@ -28,11 +29,18 @@ export class Producto {
   @Column({ name: 'precio_compra', type: 'decimal', precision: 10, scale: 2, nullable: true })
   precioCompra: number;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 3, default: 0 })
   stock: number;
 
-  @Column({ name: 'stock_minimo', type: 'int', default: 0 })
+  @Column({ name: 'stock_minimo', type: 'decimal', precision: 10, scale: 3, default: 0 })
   stockMinimo: number;
+
+  @Column({ name: 'unidad_medida_id', nullable: true })
+  unidadMedidaId: string;
+
+  @ManyToOne(() => UnidadMedida, (unidad: UnidadMedida) => unidad.productos, { nullable: true })
+  @JoinColumn({ name: 'unidad_medida_id' })
+  unidadMedida: UnidadMedida;
 
   @Column({ nullable: true })
   imagen: string;

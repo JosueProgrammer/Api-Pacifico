@@ -13,7 +13,7 @@ export class Inventario {
   @Column({ name: 'tipo_movimiento', type: 'varchar', length: 50, nullable: false })
   tipoMovimiento: string; // entrada, salida, ajuste
 
-  @Column({ type: 'int', nullable: false })
+  @Column({ type: 'decimal', precision: 10, scale: 3, nullable: false })
   cantidad: number;
 
   @Column({ type: 'text', nullable: true })

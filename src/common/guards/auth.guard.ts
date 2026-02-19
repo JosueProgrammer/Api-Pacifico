@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { Usuario } from '../entities/usuario.entity';
 import { ERROR_MESSAGES, ERROR_TITLES } from '../constants/error-messages.constants';
+import { RequestContext } from '../utils/request.context';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -50,6 +51,12 @@ export class AuthGuard implements CanActivate {
 
       // Agregar el usuario al request para uso posterior
       request.user = usuario;
+
+      // También agregarlo al RequestContext para audit subscriber
+      const context = RequestContext.getCurrentContext();
+      if (context) {
+        context.user = usuario;
+      }
       return true;
     } catch (error) {
       if (error instanceof UnauthorizedException) {

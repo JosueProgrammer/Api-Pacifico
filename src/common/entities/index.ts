@@ -13,4 +13,10 @@ export * from './inventario.entity';
 export * from './metodo-pago.entity';
 export * from './descuento.entity';
 export * from './configuracion.entity';
+export * from './unidad-medida.entity';
+export * from './caja.entity';
+export * from './movimiento-caja.entity';
+export * from './devolucion.entity';
+export * from './detalle-devolucion.entity';
+export * from './alerta.entity';
 

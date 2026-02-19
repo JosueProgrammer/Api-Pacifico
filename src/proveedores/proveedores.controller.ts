@@ -7,20 +7,18 @@ import {
   Param,
   Delete,
   HttpCode,
-  HttpStatus
+  HttpStatus,
 } from '@nestjs/common';
 import { ProveedoresService } from './proveedores.service';
 import { CreateProveedoreDto } from './dto/create-proveedore.dto';
 import { UpdateProveedoreDto } from './dto/update-proveedore.dto';
-import { ApiOperation, ApiTags, ApiParam, ApiBearerAuth, } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { ApiResponseWithData, ApiResponseWithPagination, PaginationParam, FilteringParamDecorator, SortingParamDecorator } from '../common/decorators';
 import { ApiResponseDto } from '../common/dto/api-response.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../auth/enums/user-rol.enum';
 import { FilteringParam, SortingParam } from '../common/helpers/typeorm-helpers';
-import { Proveedor } from 'src/common/entities';
-import { ERROR_MESSAGES } from 'src/common/constants/error-messages.constants';
-
+import { Proveedor } from '../common/entities/proveedor.entity';
 
 @ApiTags('Proveedores')
 @Controller('proveedores')
@@ -62,9 +60,8 @@ export class ProveedoresController {
   )
   findAll(
     @PaginationParam() pagination: any,
-    @FilteringParamDecorator() filter: FilteringParam<any>,
-    @SortingParamDecorator() sorting: SortingParam<any>,
-
+    @FilteringParamDecorator(['nombre', 'correo', 'telefono', 'activo']) filter?: FilteringParam<any> | null,
+    @SortingParamDecorator(['nombre', 'correo', 'fechaCreacion']) sorting?: SortingParam<any> | null,
   ) {
     return this.proveedoresService.findAll(pagination, filter, sorting);
   }
@@ -117,28 +114,20 @@ export class ProveedoresController {
     @Param('id') id: string,
     @Body() updateProveedoreDto: UpdateProveedoreDto,
   ) {
-    try {
-      const proveedor = await this.proveedoresService.findOne(id);
-      if (!proveedor) {
-        throw new Error(ERROR_MESSAGES.RESOURCE_NOT_FOUND);
-      }
-      const updatedProveedor = await this.proveedoresService.update(id, updateProveedoreDto);
-      return ApiResponseDto.Success(
-        updatedProveedor,
-        'Actualizar Proveedor',
-        'Proveedor actualizado exitosamente',
-      );
-    } catch (error) {
-      throw error;
-    }
+    const proveedor = await this.proveedoresService.update(id, updateProveedoreDto);
+    return ApiResponseDto.Success(
+      proveedor,
+      'Actualizar Proveedor',
+      'Proveedor actualizado exitosamente',
+    );
   }
 
-  @Delete(':id')
+  @Patch(':id/activate')
   @HttpCode(HttpStatus.OK)
-  @Roles(UserRole.ADMINISTRADOR)
+  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR)
   @ApiOperation({
-    summary: 'Eliminar un proveedor',
-    description: 'Elimina un proveedor del sistema. Requiere permisos de Administrador.',
+    summary: 'Activar un proveedor',
+    description: 'Activa un proveedor que estaba desactivado.',
   })
   @ApiParam({
     name: 'id',
@@ -146,21 +135,56 @@ export class ProveedoresController {
     type: String,
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @ApiResponseWithData(
-    Proveedor,
-    'Proveedor eliminado exitosamente',
-    HttpStatus.OK,
-  )
+  async activate(@Param('id') id: string) {
+    const proveedor = await this.proveedoresService.activate(id);
+    return ApiResponseDto.Success(
+      proveedor,
+      'Activar Proveedor',
+      'Proveedor activado exitosamente',
+    );
+  }
+
+  @Patch(':id/deactivate')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR)
+  @ApiOperation({
+    summary: 'Desactivar un proveedor',
+    description: 'Desactiva un proveedor sin eliminarlo del sistema.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del proveedor',
+    type: String,
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  async deactivate(@Param('id') id: string) {
+    const proveedor = await this.proveedoresService.deactivate(id);
+    return ApiResponseDto.Success(
+      proveedor,
+      'Desactivar Proveedor',
+      'Proveedor desactivado exitosamente',
+    );
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.ADMINISTRADOR)
+  @ApiOperation({
+    summary: 'Eliminar un proveedor',
+    description: 'Elimina un proveedor del sistema. No se puede eliminar si tiene compras asociadas. Requiere permisos de Administrador.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID del proveedor',
+    type: String,
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   async remove(@Param('id') id: string) {
-    try {
-      const proveedor = await this.proveedoresService.remove(id);
-      return ApiResponseDto.Success(
-        proveedor,
-        'Eliminar Proveedor',
-        'Proveedor eliminado exitosamente',
-      );
-    } catch (error) {
-      throw error;
-    }
+    await this.proveedoresService.remove(id);
+    return ApiResponseDto.Success(
+      null,
+      'Eliminar Proveedor',
+      'Proveedor eliminado exitosamente',
+    );
   }
 }
