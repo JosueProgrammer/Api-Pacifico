@@ -3,6 +3,7 @@ import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { AppModule } from './app.module';
 import { BadRequestException, Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { apiReference } from '@scalar/nestjs-api-reference';
 import YAML from 'yamljs';
 import helmet from 'helmet';
 import { AllExceptionsFilter } from './common/filters/all-exception.filter';
@@ -13,9 +14,31 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api/v1');
-  
-  // Integrar Helmet para seguridad
-  app.use(helmet());
+
+  // Integrar Helmet para seguridad con configuración para Scalar
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: [`'self'`],
+          styleSrc: [
+            `'self'`,
+            `'unsafe-inline'`,
+            'https://cdn.jsdelivr.net',
+            'https://fonts.googleapis.com',
+          ],
+          fontSrc: [`'self'`, 'https://fonts.gstatic.com'],
+          imgSrc: [`'self'`, 'data:', 'https://cdn.jsdelivr.net', 'https://scalar.com'],
+          scriptSrc: [
+            `'self'`,
+            `https://cdn.jsdelivr.net`,
+            `'unsafe-inline'`,
+            `'unsafe-eval'`,
+          ],
+        },
+      },
+    }),
+  );
 
   // Habilitar CORS
   app.enableCors({
@@ -60,7 +83,16 @@ async function bootstrap() {
     },
   });
 
-  SwaggerModule.setup('docs', app, document);
+  // SwaggerModule.setup('docs', app, document);
+  // Scalar Documentation
+  app.use(
+    '/api/v1/docs',
+    apiReference({
+      spec: {
+        content: document,
+      },
+    }),
+  );
 
   // Endpoint para descargar documentación en YAML
   app.getHttpAdapter().get('/swagger.yaml', (req, res) => {
@@ -73,7 +105,7 @@ async function bootstrap() {
 
   // Usar logger con nest-winston
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
-  
+
   await app.listen(port);
 
   Logger.log(
@@ -81,7 +113,7 @@ async function bootstrap() {
     'Bootstrap',
   );
   Logger.log(
-    `Swagger UI disponible en: http://localhost:${port}/docs`,
+    `Documentación Scalar disponible en: http://localhost:${port}/api/v1/docs`,
     'Bootstrap',
   );
   Logger.log(
