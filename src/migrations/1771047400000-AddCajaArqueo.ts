@@ -6,7 +6,7 @@ export class AddCajaArqueo1771047400000 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Crear tabla de cajas
         await queryRunner.query(`
-            CREATE TABLE "cajas" (
+            CREATE TABLE "api_pacifico"."cajas" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "usuario_id" uuid NOT NULL,
                 "fecha_apertura" TIMESTAMP NOT NULL DEFAULT now(),
@@ -23,7 +23,7 @@ export class AddCajaArqueo1771047400000 implements MigrationInterface {
 
         // Crear tabla de movimientos de caja
         await queryRunner.query(`
-            CREATE TABLE "movimientos_caja" (
+            CREATE TABLE "api_pacifico"."movimientos_caja" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "caja_id" uuid NOT NULL,
                 "tipo" character varying(20) NOT NULL,
@@ -38,45 +38,45 @@ export class AddCajaArqueo1771047400000 implements MigrationInterface {
 
         // Agregar foreign keys
         await queryRunner.query(`
-            ALTER TABLE "cajas" 
+            ALTER TABLE "api_pacifico"."cajas" 
             ADD CONSTRAINT "FK_cajas_usuario" 
-            FOREIGN KEY ("usuario_id") REFERENCES "usuarios"("id") 
+            FOREIGN KEY ("usuario_id") REFERENCES "api_pacifico"."usuarios"("id") 
             ON DELETE NO ACTION ON UPDATE NO ACTION
         `);
 
         await queryRunner.query(`
-            ALTER TABLE "movimientos_caja" 
+            ALTER TABLE "api_pacifico"."movimientos_caja" 
             ADD CONSTRAINT "FK_movimientos_caja_caja" 
-            FOREIGN KEY ("caja_id") REFERENCES "cajas"("id") 
+            FOREIGN KEY ("caja_id") REFERENCES "api_pacifico"."cajas"("id") 
             ON DELETE NO ACTION ON UPDATE NO ACTION
         `);
 
         await queryRunner.query(`
-            ALTER TABLE "movimientos_caja" 
+            ALTER TABLE "api_pacifico"."movimientos_caja" 
             ADD CONSTRAINT "FK_movimientos_caja_usuario" 
-            FOREIGN KEY ("usuario_id") REFERENCES "usuarios"("id") 
+            FOREIGN KEY ("usuario_id") REFERENCES "api_pacifico"."usuarios"("id") 
             ON DELETE NO ACTION ON UPDATE NO ACTION
         `);
 
         // Crear índices para mejor rendimiento
-        await queryRunner.query(`CREATE INDEX "IDX_cajas_usuario_estado" ON "cajas" ("usuario_id", "estado")`);
-        await queryRunner.query(`CREATE INDEX "IDX_movimientos_caja_caja" ON "movimientos_caja" ("caja_id")`);
-        await queryRunner.query(`CREATE INDEX "IDX_movimientos_caja_fecha" ON "movimientos_caja" ("fecha")`);
+        await queryRunner.query(`CREATE INDEX "IDX_cajas_usuario_estado" ON "api_pacifico"."cajas" ("usuario_id", "estado")`);
+        await queryRunner.query(`CREATE INDEX "IDX_movimientos_caja_caja" ON "api_pacifico"."movimientos_caja" ("caja_id")`);
+        await queryRunner.query(`CREATE INDEX "IDX_movimientos_caja_fecha" ON "api_pacifico"."movimientos_caja" ("fecha")`);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
         // Eliminar índices
-        await queryRunner.query(`DROP INDEX "IDX_movimientos_caja_fecha"`);
-        await queryRunner.query(`DROP INDEX "IDX_movimientos_caja_caja"`);
-        await queryRunner.query(`DROP INDEX "IDX_cajas_usuario_estado"`);
+        await queryRunner.query(`DROP INDEX "api_pacifico"."IDX_movimientos_caja_fecha"`);
+        await queryRunner.query(`DROP INDEX "api_pacifico"."IDX_movimientos_caja_caja"`);
+        await queryRunner.query(`DROP INDEX "api_pacifico"."IDX_cajas_usuario_estado"`);
 
         // Eliminar foreign keys
-        await queryRunner.query(`ALTER TABLE "movimientos_caja" DROP CONSTRAINT "FK_movimientos_caja_usuario"`);
-        await queryRunner.query(`ALTER TABLE "movimientos_caja" DROP CONSTRAINT "FK_movimientos_caja_caja"`);
-        await queryRunner.query(`ALTER TABLE "cajas" DROP CONSTRAINT "FK_cajas_usuario"`);
+        await queryRunner.query(`ALTER TABLE "api_pacifico"."movimientos_caja" DROP CONSTRAINT "FK_movimientos_caja_usuario"`);
+        await queryRunner.query(`ALTER TABLE "api_pacifico"."movimientos_caja" DROP CONSTRAINT "FK_movimientos_caja_caja"`);
+        await queryRunner.query(`ALTER TABLE "api_pacifico"."cajas" DROP CONSTRAINT "FK_cajas_usuario"`);
 
         // Eliminar tablas
-        await queryRunner.query(`DROP TABLE "movimientos_caja"`);
-        await queryRunner.query(`DROP TABLE "cajas"`);
+        await queryRunner.query(`DROP TABLE "api_pacifico"."movimientos_caja"`);
+        await queryRunner.query(`DROP TABLE "api_pacifico"."cajas"`);
     }
 }

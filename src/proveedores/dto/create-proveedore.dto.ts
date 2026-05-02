@@ -24,20 +24,18 @@ export class CreateProveedoreDto {
     @ApiProperty({
         example: 'contacto@proveedor.com',
         description: 'Correo electrónico del proveedor',
+        required: false,
     })
+    @IsOptional()
     @IsEmail()
-    @IsNotEmpty()
-    correo: string;
+    correo?: string;
 
     @ApiProperty({
-        example: '+50588889999',
-        description: 'Número de teléfono del proveedor (formato internacional)',
+        example: '+505 8888-8888',
+        description: 'Número de teléfono del proveedor',
     })
     @IsString()
     @IsNotEmpty()
-    @Matches(/^\+?\d{8,15}$/, {
-        message: 'El teléfono debe tener entre 8 y 15 dígitos y puede incluir +',
-    })
     telefono: string;
 
     @ApiProperty({
@@ -47,6 +45,22 @@ export class CreateProveedoreDto {
     })
     @IsOptional()
     @IsString()
-    @Length(5, 200)
     direccion?: string;
+
+    @ApiProperty({
+        example: 'Juan Pérez',
+        description: 'Persona de contacto',
+        required: false,
+    })
+    @IsOptional()
+    @IsString()
+    contacto?: string;
+
+    @ApiProperty({
+        example: true,
+        description: 'Estado del proveedor',
+        required: false,
+    })
+    @IsOptional()
+    activo?: boolean;
 }

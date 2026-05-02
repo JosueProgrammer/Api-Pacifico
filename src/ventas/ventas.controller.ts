@@ -29,7 +29,7 @@ export class VentasController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.VENDEDOR)
+  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO)
   @ApiOperation({
     summary: 'Crear una nueva venta',
     description: 'Crea una nueva venta con sus detalles. Actualiza automáticamente el stock de los productos.',
@@ -230,7 +230,7 @@ export class VentasController {
 
   @Patch(':id/confirmar')
   @HttpCode(HttpStatus.OK)
-  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.VENDEDOR)
+  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO)
   @ApiOperation({
     summary: 'Confirmar una venta en borrador',
     description: 'Confirma una venta en estado borrador, descontando stock y registrando movimientos.',

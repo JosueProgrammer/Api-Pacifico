@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsBoolean, IsString, MaxLength } from "class-validator";
+import { IsBoolean, IsString, MaxLength, IsOptional } from "class-validator";
 
 export class CreateClienteDto {
     @ApiProperty({
@@ -20,6 +20,7 @@ export class CreateClienteDto {
         maxLength: 100
 
     })
+    @IsOptional()
     @IsString({ message: "El correo debe ser una cadena de texto" })
     @MaxLength(100, { message: "El correo debe tener menos de 100 caracteres" })
     correo: string;
@@ -30,6 +31,7 @@ export class CreateClienteDto {
         required: false,
         maxLength: 15
     })
+    @IsOptional()
     @IsString({ message: "El teléfono debe ser una cadena de texto" })
     @MaxLength(15, { message: "El teléfono debe tener menos de 15 caracteres" })
     telefono: string;
@@ -39,6 +41,7 @@ export class CreateClienteDto {
         example: true,
         required: false
     })
+    @IsOptional()
     @IsBoolean({ message: "El valor debe ser booleano" })
     activo: boolean
 

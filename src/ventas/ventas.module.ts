@@ -9,12 +9,14 @@ import { Cliente } from '../common/entities/cliente.entity';
 import { MetodoPago } from '../common/entities/metodo-pago.entity';
 import { DescuentosModule } from '../descuentos/descuentos.module';
 import { InventarioModule } from '../inventario/inventario.module';
+import { CajaModule } from '../caja/caja.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Venta, DetalleVenta, Producto, Cliente, MetodoPago]),
     DescuentosModule,
     InventarioModule,
+    CajaModule,
   ],
   controllers: [VentasController],
   providers: [VentasService],

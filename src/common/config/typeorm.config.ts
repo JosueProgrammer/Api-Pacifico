@@ -15,6 +15,6 @@ export const typeOrmConfig = (
   entities: [__dirname + '/../../**/*.entity.{js,ts}'],
   migrations: [__dirname + '/../../migrations/**/*.ts'],
   autoLoadEntities: true,
-  synchronize: configService.get<boolean>('SYNCHRONIZE') || false,
+  synchronize: configService.get('SYNCHRONIZE') === 'true' || configService.get('SYNCHRONIZE') === true,
 });
 

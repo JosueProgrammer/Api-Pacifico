@@ -22,7 +22,7 @@ export class CajaService {
     @InjectRepository(MovimientoCaja)
     private readonly movimientoCajaRepository: Repository<MovimientoCaja>,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   /**
    * Abre una nueva caja para el usuario
@@ -45,6 +45,8 @@ export class CajaService {
       const caja = this.cajaRepository.create({
         usuarioId,
         montoInicial: abrirCajaDto.montoInicial,
+        montoEsperado: abrirCajaDto.montoInicial,
+        observaciones: abrirCajaDto.observaciones,
         estado: EstadoCaja.ABIERTA,
         fechaApertura: new Date(),
       });
@@ -125,6 +127,22 @@ export class CajaService {
   }
 
   /**
+   * Obtiene todas las cajas abiertas actualmente (para administradores)
+   */
+  async getCajasAbiertas(): Promise<Caja[]> {
+    try {
+      return await this.cajaRepository.find({
+        where: { estado: EstadoCaja.ABIERTA },
+        relations: ['usuario'],
+        order: { fechaApertura: 'DESC' },
+      });
+    } catch (error) {
+      handleDBErrors(error, ERROR_MESSAGES.CAJA_NOT_FOUND);
+      throw error;
+    }
+  }
+
+  /**
    * Registra un movimiento manual (retiro/depósito)
    */
   async registrarMovimiento(
@@ -144,18 +162,32 @@ export class CajaService {
         );
       }
 
+      // Mapear tipos de la guía de integración a tipos internos
+      let tipoInterno = crearMovimientoDto.tipo as any;
+      if (tipoInterno === 'entrada') tipoInterno = TipoMovimientoCaja.DEPOSITO;
+      if (tipoInterno === 'salida') tipoInterno = TipoMovimientoCaja.RETIRO;
+
       // Crear el movimiento
       const movimiento = this.movimientoCajaRepository.create({
         cajaId: caja.id,
         usuarioId,
-        tipo: crearMovimientoDto.tipo,
+        tipo: tipoInterno,
         monto: crearMovimientoDto.monto,
-        concepto: crearMovimientoDto.concepto,
+        concepto: crearMovimientoDto.concepto || crearMovimientoDto.motivo || 'Movimiento manual',
         referenciaId: crearMovimientoDto.referenciaId,
         fecha: new Date(),
       });
 
       const movimientoGuardado = await this.movimientoCajaRepository.save(movimiento);
+
+      // Actualizar monto esperado en la caja
+      const monto = Number(movimientoGuardado.monto);
+      if (tipoInterno === TipoMovimientoCaja.DEPOSITO || tipoInterno === TipoMovimientoCaja.VENTA) {
+        caja.montoEsperado = Number(caja.montoEsperado || 0) + monto;
+      } else {
+        caja.montoEsperado = Number(caja.montoEsperado || 0) - monto;
+      }
+      await this.cajaRepository.save(caja);
 
       return this.findMovimientoById(movimientoGuardado.id);
     } catch (error) {
@@ -189,7 +221,21 @@ export class CajaService {
       fecha: new Date(),
     });
 
-    return queryRunner.manager.save(MovimientoCaja, movimiento);
+    const movimientoGuardado = await queryRunner.manager.save(MovimientoCaja, movimiento);
+
+    // Actualizar monto esperado en la caja
+    const caja = await queryRunner.manager.findOne(Caja, { where: { id: datos.cajaId } });
+    if (caja) {
+      const monto = Number(datos.monto);
+      if (datos.tipo === TipoMovimientoCaja.VENTA || datos.tipo === TipoMovimientoCaja.DEPOSITO) {
+        caja.montoEsperado = Number(caja.montoEsperado || 0) + monto;
+      } else {
+        caja.montoEsperado = Number(caja.montoEsperado || 0) - monto;
+      }
+      await queryRunner.manager.save(Caja, caja);
+    }
+
+    return movimientoGuardado;
   }
 
   /**
@@ -367,7 +413,7 @@ export class CajaService {
 
     for (const mov of movimientos) {
       const monto = Number(mov.monto);
-      
+
       // Ventas y depósitos suman, devoluciones y retiros restan
       if (mov.tipo === TipoMovimientoCaja.VENTA || mov.tipo === TipoMovimientoCaja.DEPOSITO) {
         montoEsperado += monto;

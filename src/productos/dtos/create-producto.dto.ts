@@ -41,6 +41,16 @@ export class CreateProductoDto {
   nombre: string;
 
   @ApiProperty({
+    description: 'Tipo de producto (ALMACENABLE, CONSUMIBLE, SERVICIO)',
+    example: 'ALMACENABLE',
+    required: false,
+    default: 'ALMACENABLE',
+  })
+  @IsOptional()
+  @IsString({ message: 'El tipo debe ser una cadena de texto' })
+  tipo?: string;
+
+  @ApiProperty({
     description: 'Descripción del producto',
     example: 'Laptop de alto rendimiento con procesador Intel i7',
     required: false,

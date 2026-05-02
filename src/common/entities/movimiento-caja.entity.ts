@@ -26,7 +26,7 @@ export class MovimientoCaja {
   @Column({ type: 'varchar', length: 255, nullable: true })
   concepto?: string;
 
-  @Column({ name: 'referencia_id', type: 'uuid', nullable: true })
+  @Column({ name: 'referencia_id', type: 'varchar', length: 100, nullable: true })
   referenciaId?: string;
 
   @Column({ name: 'usuario_id', nullable: false })

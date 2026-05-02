@@ -23,11 +23,11 @@ import { UserRole } from '../auth/enums/user-rol.enum';
 @Controller('caja')
 @ApiBearerAuth()
 export class CajaController {
-  constructor(private readonly cajaService: CajaService) {}
+  constructor(private readonly cajaService: CajaService) { }
 
   @Post('abrir')
   @HttpCode(HttpStatus.CREATED)
-  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.VENDEDOR)
+  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO)
   @ApiOperation({
     summary: 'Abrir caja',
     description: 'Abre una nueva caja con el monto inicial especificado. Solo puede haber una caja abierta por usuario.',
@@ -49,7 +49,7 @@ export class CajaController {
 
   @Post('cerrar')
   @HttpCode(HttpStatus.OK)
-  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.VENDEDOR)
+  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO)
   @ApiOperation({
     summary: 'Cerrar caja',
     description: 'Cierra la caja actual del usuario realizando el arqueo. Calcula automáticamente la diferencia entre monto esperado y real.',
@@ -69,9 +69,30 @@ export class CajaController {
     );
   }
 
+  @Get('abiertas')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR)
+  @ApiOperation({
+    summary: 'Obtener todas las cajas abiertas',
+    description: 'Obtiene una lista de todas las cajas que se encuentran abiertas actualmente en el sistema.',
+  })
+  @ApiResponseWithData(
+    Caja,
+    'Cajas abiertas obtenidas exitosamente',
+    HttpStatus.OK,
+  )
+  async getCajasAbiertas() {
+    const cajas = await this.cajaService.getCajasAbiertas();
+    return ApiResponseDto.Success(
+      cajas,
+      'Cajas Abiertas',
+      'Cajas abiertas obtenidas exitosamente',
+    );
+  }
+
   @Get('actual')
   @HttpCode(HttpStatus.OK)
-  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.VENDEDOR)
+  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO)
   @ApiOperation({
     summary: 'Obtener caja actual',
     description: 'Obtiene el estado de la caja abierta del usuario actual.',
@@ -93,7 +114,7 @@ export class CajaController {
 
   @Post('movimiento')
   @HttpCode(HttpStatus.CREATED)
-  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.VENDEDOR)
+  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO)
   @ApiOperation({
     summary: 'Registrar movimiento manual',
     description: 'Registra un retiro o depósito manual en la caja actual.',
@@ -121,7 +142,7 @@ export class CajaController {
 
   @Get('historial')
   @HttpCode(HttpStatus.OK)
-  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR)
+  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO)
   @ApiOperation({
     summary: 'Obtener historial de cajas',
     description: 'Obtiene el historial de cajas cerradas con paginación.',
@@ -133,14 +154,24 @@ export class CajaController {
   )
   async getHistorial(
     @PaginationParam() pagination: any,
+    @Req() req: any,
     @Query('usuarioId') usuarioId?: string,
   ) {
-    return await this.cajaService.getHistorial(pagination, usuarioId);
+    const userRole = req.user?.rol?.nombre;
+    const currentUserId = req.user?.id || req.user?.sub;
+
+    // Si el usuario es Vendedor o Cajero, solo puede ver su propio historial
+    let filterUsuarioId = usuarioId;
+    if (userRole === UserRole.VENDEDOR || userRole === UserRole.CAJERO) {
+      filterUsuarioId = currentUserId;
+    }
+
+    return await this.cajaService.getHistorial(pagination, filterUsuarioId);
   }
 
   @Get(':id/movimientos')
   @HttpCode(HttpStatus.OK)
-  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.VENDEDOR)
+  @Roles(UserRole.ADMINISTRADOR, UserRole.SUPERVISOR, UserRole.VENDEDOR, UserRole.CAJERO)
   @ApiOperation({
     summary: 'Obtener movimientos de una caja',
     description: 'Obtiene todos los movimientos de una caja específica.',

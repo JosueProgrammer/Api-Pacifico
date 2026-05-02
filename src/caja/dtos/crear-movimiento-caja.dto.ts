@@ -4,15 +4,17 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export enum TipoMovimientoManual {
   RETIRO = 'retiro',
   DEPOSITO = 'deposito',
+  ENTRADA = 'entrada',
+  SALIDA = 'salida',
 }
 
 export class CrearMovimientoCajaDto {
   @ApiProperty({
-    description: 'Tipo de movimiento manual',
+    description: 'Tipo de movimiento manual (retiro, deposito, entrada, salida)',
     enum: TipoMovimientoManual,
     example: TipoMovimientoManual.RETIRO,
   })
-  @IsEnum(TipoMovimientoManual, { message: 'El tipo debe ser retiro o deposito' })
+  @IsEnum(TipoMovimientoManual, { message: 'El tipo debe ser retiro, deposito, entrada o salida' })
   tipo: TipoMovimientoManual;
 
   @ApiProperty({
@@ -24,18 +26,27 @@ export class CrearMovimientoCajaDto {
   @Min(0.01, { message: 'El monto debe ser mayor a 0' })
   monto: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Concepto o descripción del movimiento',
     example: 'Retiro para cambio',
   })
   @IsString({ message: 'El concepto debe ser texto' })
-  concepto: string;
+  @IsOptional()
+  concepto?: string;
 
   @ApiPropertyOptional({
-    description: 'ID de referencia opcional (venta, devolución, etc.)',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Motivo del movimiento (Alias para concepto)',
+    example: 'Cambio de monedas',
+  })
+  @IsString({ message: 'El motivo debe ser texto' })
+  @IsOptional()
+  motivo?: string;
+
+  @ApiPropertyOptional({
+    description: 'ID de referencia opcional',
+    example: 'REF-12345',
   })
   @IsOptional()
-  @IsUUID('4', { message: 'El ID de referencia debe ser un UUID válido' })
+  @IsString({ message: 'El ID de referencia debe ser un texto válido' })
   referenciaId?: string;
 }

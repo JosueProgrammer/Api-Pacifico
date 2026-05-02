@@ -1,4 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { Rol } from './rol.entity';
 
 @Entity({ name: 'usuarios' })
@@ -12,6 +13,7 @@ export class Usuario {
   @Column({ unique: true, nullable: false })
   correo: string;
 
+  @Exclude()
   @Column({ nullable: false })
   contraseña: string;
 
@@ -31,9 +33,11 @@ export class Usuario {
   fechaActualizacion: Date;
 
   // Campos para recuperación de contraseñas
+  @Exclude()
   @Column({ name: 'codigo_recuperacion', nullable: true, length: 4 })
   codigoRecuperacion: string;
 
+  @Exclude()
   @Column({ name: 'fecha_expiracion_codigo', type: 'timestamp', nullable: true })
   fechaExpiracionCodigo: Date;
 

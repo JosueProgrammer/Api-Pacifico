@@ -5,6 +5,8 @@ import { Venta } from '../common/entities/venta.entity';
 import { DetalleVenta } from '../common/entities/detalle-venta.entity';
 import { Producto } from '../common/entities/producto.entity';
 import { Compra } from '../common/entities/compra.entity';
+import { Cliente } from '../common/entities/cliente.entity';
+import { Caja, EstadoCaja } from '../common/entities/caja.entity';
 import { ReporteFilterDto } from './dtos/reporte-filter.dto';
 import { handleDBErrors } from '../common/helpers/typeorm-helpers';
 
@@ -19,8 +21,12 @@ export class ReportesService {
     private readonly productoRepository: Repository<Producto>,
     @InjectRepository(Compra)
     private readonly compraRepository: Repository<Compra>,
+    @InjectRepository(Cliente)
+    private readonly clienteRepository: Repository<Cliente>,
+    @InjectRepository(Caja)
+    private readonly cajaRepository: Repository<Caja>,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async getDashboard() {
     try {
@@ -29,7 +35,7 @@ export class ReportesService {
       const hoyEnd = new Date();
       hoyEnd.setHours(23, 59, 59, 999);
 
-      // Ventas de hoy
+      // 1. Ventas de hoy
       const ventasHoyResult = await this.ventaRepository
         .createQueryBuilder('venta')
         .select('SUM(venta.total)', 'total')
@@ -41,7 +47,7 @@ export class ReportesService {
         .andWhere('venta.estado = :estado', { estado: 'completada' })
         .getRawOne();
 
-      // Ventas del mes
+      // 2. Ventas del mes
       const mesStart = new Date();
       mesStart.setDate(1);
       mesStart.setHours(0, 0, 0, 0);
@@ -53,46 +59,84 @@ export class ReportesService {
         .andWhere('venta.estado = :estado', { estado: 'completada' })
         .getRawOne();
 
-      // Productos vendidos hoy
-      const productosVendidosHoyResult = await this.detalleVentaRepository
-        .createQueryBuilder('dv')
-        .select('SUM(dv.cantidad)', 'total')
-        .innerJoin('dv.venta', 'venta')
-        .where('venta.fechaVenta BETWEEN :start AND :end', {
-          start: hoyStart,
-          end: hoyEnd,
-        })
-        .andWhere('venta.estado = :estado', { estado: 'completada' })
-        .getRawOne();
+      // 3. Clientes totales
+      const totalClientes = await this.clienteRepository.count({ where: { activo: true } });
 
-      // Alertas de stock
-      const productosStockBajo = await this.productoRepository
+      // 4. Cajas abiertas actualmente
+      const cajasAbiertas = await this.cajaRepository.count({ where: { estado: EstadoCaja.ABIERTA } });
+
+      // 5. Rendimiento de Ventas (Últimos 7 días)
+      const sieteDiasAtras = new Date();
+      sieteDiasAtras.setDate(sieteDiasAtras.getDate() - 6);
+      sieteDiasAtras.setHours(0, 0, 0, 0);
+
+      const rendimientoVentas = await this.ventaRepository
+        .createQueryBuilder('venta')
+        .select("TO_CHAR(venta.fechaVenta, 'YYYY-MM-DD')", 'fecha')
+        .addSelect('SUM(venta.total)', 'total')
+        .where('venta.fechaVenta >= :start', { start: sieteDiasAtras })
+        .andWhere('venta.estado = :estado', { estado: 'completada' })
+        .groupBy('fecha')
+        .orderBy('fecha', 'ASC')
+        .getRawMany();
+
+      // Formatear rendimiento para asegurar que aparezcan los 7 días
+      const chartData: any[] = [];
+      const dayNames = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(sieteDiasAtras);
+        d.setDate(d.getDate() + i);
+        const isoFecha = d.toISOString().split('T')[0];
+        const dayMatch = rendimientoVentas.find(rv => rv.fecha === isoFecha);
+
+        chartData.push({
+          dia: dayNames[d.getDay()],
+          fecha: isoFecha,
+          total: Number(dayMatch?.total) || 0
+        });
+      }
+
+      // 6. Alertas Críticas (Stock bajo o agotado)
+      const alertasStock = await this.productoRepository
         .createQueryBuilder('producto')
         .where('producto.stock <= producto.stockMinimo')
         .andWhere('producto.activo = :activo', { activo: true })
-        .getCount();
+        .orderBy('producto.stock', 'ASC')
+        .limit(5)
+        .getMany();
 
-      const productosAgotados = await this.productoRepository
-        .createQueryBuilder('producto')
-        .where('producto.stock <= 0')
-        .andWhere('producto.activo = :activo', { activo: true })
-        .getCount();
-
-      // Ticket promedio (histórico)
-      const ticketPromedioResult = await this.ventaRepository
-        .createQueryBuilder('venta')
-        .select('AVG(venta.total)', 'promedio')
-        .where('venta.estado = :estado', { estado: 'completada' })
-        .getRawOne();
+      // 7. Productos más vendidos (Top 5 hoy o histórico corto)
+      const topProductos = await this.detalleVentaRepository
+        .createQueryBuilder('dv')
+        .select('producto.nombre', 'nombre')
+        .addSelect('SUM(dv.cantidad)', 'cantidad')
+        .innerJoin('dv.producto', 'producto')
+        .innerJoin('dv.venta', 'venta')
+        .where('venta.fechaVenta BETWEEN :start AND :end', { start: hoyStart, end: hoyEnd })
+        .andWhere('venta.estado = :estado', { estado: 'completada' })
+        .groupBy('producto.nombre')
+        .orderBy('SUM(dv.cantidad)', 'DESC')
+        .limit(3)
+        .getRawMany();
 
       return {
         ventasHoy: Number(ventasHoyResult?.total) || 0,
         cantidadVentasHoy: Number(ventasHoyResult?.cantidad) || 0,
         ventasMes: Number(ventasMesResult?.total) || 0,
-        ticketPromedio: Number(ticketPromedioResult?.promedio) || 0,
-        productosVendidosHoy: Number(productosVendidosHoyResult?.total) || 0,
-        productosStockBajo,
-        productosAgotados,
+        totalClientes,
+        cajasAbiertas,
+        rendimientoVentas: chartData,
+        alertas: alertasStock.map(p => ({
+          id: p.id,
+          nombre: p.nombre,
+          stock: Number(p.stock),
+          stockMinimo: Number(p.stockMinimo),
+          tipo: p.stock <= 0 ? 'critica' : 'advertencia'
+        })),
+        topProductos: topProductos.map(tp => ({
+          nombre: tp.nombre,
+          cantidad: Number(tp.cantidad)
+        }))
       };
     } catch (error) {
       handleDBErrors(error, 'Error al generar dashboard');
@@ -167,8 +211,8 @@ export class ReportesService {
         nombre: item.nombre,
         cantidadVendida: Number(item.cantidadVendida),
         totalVentas: Number(item.totalVentas),
-        porcentajeVentas: totalVentasPeriodo > 0 
-          ? Number(((Number(item.totalVentas) / totalVentasPeriodo) * 100).toFixed(2)) 
+        porcentajeVentas: totalVentasPeriodo > 0
+          ? Number(((Number(item.totalVentas) / totalVentasPeriodo) * 100).toFixed(2))
           : 0,
       }));
     } catch (error) {
@@ -203,8 +247,8 @@ export class ReportesService {
       return result.map(item => ({
         categoria: item.categoria,
         totalVentas: Number(item.totalVentas),
-        porcentaje: totalGeneral > 0 
-          ? Number(((Number(item.totalVentas) / totalGeneral) * 100).toFixed(2)) 
+        porcentaje: totalGeneral > 0
+          ? Number(((Number(item.totalVentas) / totalGeneral) * 100).toFixed(2))
           : 0,
       }));
     } catch (error) {
@@ -227,7 +271,7 @@ export class ReportesService {
         .where('venta.fechaVenta BETWEEN :start AND :end', { start, end })
         .andWhere('venta.estado = :estado', { estado: 'completada' })
         .getRawOne();
-        
+
       const ingresosTotales = Number(ingresosResult?.ingresos) || 0;
 
       // 2. Calcular costos de los productos vendidos
@@ -241,12 +285,12 @@ export class ReportesService {
         .where('venta.fechaVenta BETWEEN :start AND :end', { start, end })
         .andWhere('venta.estado = :estado', { estado: 'completada' })
         .getRawOne();
-      
+
       const costoProductos = Number(costosResult?.costos) || 0;
-      
+
       const margenBruto = ingresosTotales - costoProductos;
-      const porcentajeMargen = ingresosTotales > 0 
-        ? (margenBruto / ingresosTotales) * 100 
+      const porcentajeMargen = ingresosTotales > 0
+        ? (margenBruto / ingresosTotales) * 100
         : 0;
 
       return {
@@ -264,9 +308,9 @@ export class ReportesService {
   async getComparativa(filter: ReporteFilterDto) {
     try {
       // Por defecto comparar mes actual vs mes anterior si no se especifica
-      const periodo = filter.agrupar || 'mes'; 
+      const periodo = filter.agrupar || 'mes';
       const hoy = new Date();
-      
+
       let currentStart: Date, currentEnd: Date;
       let prevStart: Date, prevEnd: Date;
 
@@ -274,7 +318,7 @@ export class ReportesService {
         // Mes actual
         currentStart = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
         currentEnd = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0, 23, 59, 59, 999);
-        
+
         // Mes anterior
         prevStart = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
         prevEnd = new Date(hoy.getFullYear(), hoy.getMonth(), 0, 23, 59, 59, 999);
@@ -296,7 +340,7 @@ export class ReportesService {
           .where('venta.fechaVenta BETWEEN :start AND :end', { start, end })
           .andWhere('venta.estado = :estado', { estado: 'completada' })
           .getRawOne();
-          
+
         return {
           total: Number(ventas?.total) || 0,
           cantidad: Number(ventas?.cantidad) || 0,
@@ -306,8 +350,8 @@ export class ReportesService {
       const actual = await getMetricas(currentStart, currentEnd);
       const anterior = await getMetricas(prevStart, prevEnd);
 
-      const variacionDinero = anterior.total > 0 
-        ? ((actual.total - anterior.total) / anterior.total) * 100 
+      const variacionDinero = anterior.total > 0
+        ? ((actual.total - anterior.total) / anterior.total) * 100
         : 100;
 
       const variacionCantidad = anterior.cantidad > 0
@@ -332,8 +376,8 @@ export class ReportesService {
       };
 
     } catch (error) {
-       handleDBErrors(error, 'Error al generar comparativa');
-       throw error;
+      handleDBErrors(error, 'Error al generar comparativa');
+      throw error;
     }
   }
 }

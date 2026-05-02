@@ -11,6 +11,9 @@ export class Producto {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ name: 'tipo', type: 'varchar', length: 20, default: 'ALMACENABLE' })
+  tipo: string;
+
   @Column({ name: 'codigo_barras', unique: true, nullable: true })
   codigoBarras: string;
 

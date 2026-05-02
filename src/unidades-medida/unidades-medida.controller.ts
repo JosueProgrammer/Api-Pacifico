@@ -18,15 +18,16 @@ import { UnidadMedida } from '../common/entities/unidad-medida.entity';
 import { ApiPaginatedResponseDto } from '../common/dto/api-paginated-response.dto';
 import { PaginationParamsDto } from '../common/dto/pagination-param.dto';
 import { Roles } from '../common/decorators/roles.decorator';
+import { UserRole } from 'src/auth/enums/user-rol.enum';
 
 @ApiTags('Unidades de Medida')
 @ApiBearerAuth()
 @Controller('unidades-medida')
 export class UnidadesMedidaController {
-  constructor(private readonly unidadesMedidaService: UnidadesMedidaService) {}
+  constructor(private readonly unidadesMedidaService: UnidadesMedidaService) { }
 
   @Post()
-  @Roles('admin')
+  @Roles(UserRole.ADMINISTRADOR)
   @ApiOperation({ summary: 'Crear una nueva unidad de medida' })
   @ApiResponse({ status: 201, description: 'Unidad de medida creada exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos o abreviatura duplicada' })

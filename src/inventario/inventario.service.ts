@@ -58,7 +58,7 @@ export class InventarioService {
 
             switch (createMovimientoDto.tipoMovimiento) {
                 case TipoMovimiento.ENTRADA:
-                    nuevoStock = producto.stock + cantidad;
+                    nuevoStock = Number(producto.stock) + cantidad;
                     break;
                 case TipoMovimiento.SALIDA:
                     nuevoStock = producto.stock - cantidad;
@@ -66,7 +66,7 @@ export class InventarioService {
                 case TipoMovimiento.AJUSTE:
                     // En ajuste, la cantidad puede ser positiva (agregar) o se usa para establecer
                     // Aquí asumimos que es una diferencia
-                    nuevoStock = producto.stock + cantidad;
+                    nuevoStock = Number(producto.stock) + cantidad;
                     break;
             }
 

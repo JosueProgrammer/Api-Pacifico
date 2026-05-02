@@ -137,8 +137,18 @@ export class ProductosService {
 
   async remove(id: string): Promise<void> {
     const producto = await this.findOne(id);
-    // TODO: Verify dependencies (e.g. sales) before deleting?
-    await this.productoRepo.remove(producto);
+    try {
+      await this.productoRepo.remove(producto);
+    } catch (error: any) {
+      // Postgres Error 23503 indicates an attempt to delete an item
+      // that is still referenced by a foreign key in another table
+      if (error.code === '23503' || error.message?.includes('foreign key')) {
+        throw new ConflictException(
+          'No es posible eliminar el producto porque tiene historial de inventario, compras o ventas asociadas. Te sugerimos desactivarlo o editarlo en su lugar.'
+        );
+      }
+      throw error;
+    }
   }
 
   async activate(id: string): Promise<Producto> {

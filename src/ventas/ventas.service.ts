@@ -26,6 +26,8 @@ import { ERROR_MESSAGES, ERROR_TITLES } from '../common/constants/error-messages
 import { ApiPaginatedMetaDto } from '../common/dto/api-paginated-meta.dto';
 import { ApiPaginatedResponseDto } from '../common/dto/api-paginated-response.dto';
 import { PaginationParamsDto } from '../common/dto/pagination-param.dto';
+import { CajaService } from '../caja/caja.service';
+import { TipoMovimientoCaja } from '../common/entities/movimiento-caja.entity';
 
 @Injectable()
 export class VentasService {
@@ -43,6 +45,7 @@ export class VentasService {
         private readonly dataSource: DataSource,
         private readonly descuentosService: DescuentosService,
         private readonly inventarioService: InventarioService,
+        private readonly cajaService: CajaService,
     ) { }
 
     async create(createVentaDto: CreateVentaDto, usuarioId: string): Promise<Venta> {
@@ -97,7 +100,7 @@ export class VentasService {
                 }
 
                 // VALIDACIÓN CRÍTICA: El stock no puede quedar negativo
-                if (producto.stock < detalle.cantidad) {
+                if (producto.tipo === 'ALMACENABLE' && producto.stock < detalle.cantidad) {
                     throw new BadRequestException(
                         `Stock insuficiente para el producto "${producto.nombre}". Stock disponible: ${producto.stock}, solicitado: ${detalle.cantidad}`,
                         ERROR_TITLES.VALIDATION_ERROR,
@@ -109,12 +112,14 @@ export class VentasService {
                 const esBorrador = createVentaDto.estado === EstadoVenta.BORRADOR;
                 
                 if (!esBorrador) {
-                    const stockResultante = producto.stock - detalle.cantidad;
-                    if (stockResultante < 0) {
-                        throw new BadRequestException(
-                            `No se puede realizar la venta. El stock de "${producto.nombre}" quedaría en ${stockResultante}`,
-                            ERROR_TITLES.VALIDATION_ERROR,
-                        );
+                    if (producto.tipo === 'ALMACENABLE') {
+                        const stockResultante = producto.stock - detalle.cantidad;
+                        if (stockResultante < 0) {
+                            throw new BadRequestException(
+                                `No se puede realizar la venta. El stock de "${producto.nombre}" quedaría en ${stockResultante}`,
+                                ERROR_TITLES.VALIDATION_ERROR,
+                            );
+                        }
                     }
                 }
 
@@ -179,6 +184,21 @@ export class VentasService {
 
             const ventaGuardada = await queryRunner.manager.save(Venta, venta);
 
+            // Registrar movimiento en caja si hay una abierta
+            if (ventaGuardada.estado === EstadoVenta.COMPLETADA) {
+                const cajaAbierta = await this.cajaService.getCajaAbiertaByUsuario(usuarioId);
+                if (cajaAbierta) {
+                    await this.cajaService.registrarMovimientoInterno(queryRunner, {
+                        cajaId: cajaAbierta.id,
+                        usuarioId,
+                        tipo: TipoMovimientoCaja.VENTA,
+                        monto: Number(ventaGuardada.total),
+                        concepto: `Venta Factura #${ventaGuardada.numeroFactura}`,
+                        referenciaId: ventaGuardada.id
+                    });
+                }
+            }
+
             // Crear detalles y actualizar stock
             for (const detalle of detallesValidados) {
                 // Crear detalle de venta
@@ -195,20 +215,22 @@ export class VentasService {
 
             // Si NO es borrador, actualizar stock y registrar movimientos
             if (createVentaDto.estado !== EstadoVenta.BORRADOR) {
-                // Actualizar stock del producto
-                detalle.producto.stock -= detalle.cantidad;
-                detalle.producto.fechaActualizacion = new Date();
-                await queryRunner.manager.save(Producto, detalle.producto);
+                if (detalle.producto.tipo === 'ALMACENABLE') {
+                    // Actualizar stock del producto
+                    detalle.producto.stock -= detalle.cantidad;
+                    detalle.producto.fechaActualizacion = new Date();
+                    await queryRunner.manager.save(Producto, detalle.producto);
 
-                // Registrar movimiento de inventario (SALIDA por venta)
-                await this.inventarioService.registrarMovimientoInterno(queryRunner, {
-                    productoId: detalle.producto.id,
-                    tipoMovimiento: TipoMovimiento.SALIDA,
-                    cantidad: detalle.cantidad,
-                    motivo: `Venta ${ventaGuardada.numeroFactura}`,
-                    referenciaId: ventaGuardada.id,
-                    usuarioId,
-                });
+                    // Registrar movimiento de inventario (SALIDA por venta)
+                    await this.inventarioService.registrarMovimientoInterno(queryRunner, {
+                        productoId: detalle.producto.id,
+                        tipoMovimiento: TipoMovimiento.SALIDA,
+                        cantidad: detalle.cantidad,
+                        motivo: `Venta ${ventaGuardada.numeroFactura}`,
+                        referenciaId: ventaGuardada.id,
+                        usuarioId,
+                    });
+                }
 
                 // Incrementar uso del descuento si aplica
                 if (idDescuentoAplicado) {
@@ -329,28 +351,30 @@ export class VentasService {
                     throw new NotFoundException(`Producto ${detalle.productoId} no encontrado`);
                 }
 
-                // Validar stock
-                if (producto.stock < detalle.cantidad) {
-                    throw new BadRequestException(
-                         `Stock insuficiente para el producto "${producto.nombre}". Stock disponible: ${producto.stock}, solicitado: ${detalle.cantidad}`,
-                         ERROR_TITLES.VALIDATION_ERROR,
-                    );
+                if (producto.tipo === 'ALMACENABLE') {
+                    // Validar stock
+                    if (producto.stock < detalle.cantidad) {
+                        throw new BadRequestException(
+                             `Stock insuficiente para el producto "${producto.nombre}". Stock disponible: ${producto.stock}, solicitado: ${detalle.cantidad}`,
+                             ERROR_TITLES.VALIDATION_ERROR,
+                        );
+                    }
+
+                    // Actualizar stock
+                    producto.stock -= detalle.cantidad;
+                    producto.fechaActualizacion = new Date();
+                    await queryRunner.manager.save(Producto, producto);
+
+                    // Registrar movimiento inventario
+                    await this.inventarioService.registrarMovimientoInterno(queryRunner, {
+                         productoId: producto.id,
+                         tipoMovimiento: TipoMovimiento.SALIDA,
+                         cantidad: detalle.cantidad,
+                         motivo: `Confirmación Venta ${venta.numeroFactura}`,
+                         referenciaId: venta.id,
+                         usuarioId: venta.usuarioId,
+                    });
                 }
-
-                // Actualizar stock
-                producto.stock -= detalle.cantidad;
-                producto.fechaActualizacion = new Date();
-                await queryRunner.manager.save(Producto, producto);
-
-                // Registrar movimiento inventario
-                await this.inventarioService.registrarMovimientoInterno(queryRunner, {
-                     productoId: producto.id,
-                     tipoMovimiento: TipoMovimiento.SALIDA,
-                     cantidad: detalle.cantidad,
-                     motivo: `Confirmación Venta ${venta.numeroFactura}`,
-                     referenciaId: venta.id,
-                     usuarioId: venta.usuarioId,
-                });
             }
 
             // Incrementar uso descuento si aplica
@@ -436,7 +460,7 @@ export class VentasService {
                     where: { id: detalle.productoId },
                 });
 
-                if (producto) {
+                if (producto && producto.tipo === 'ALMACENABLE') {
                     producto.stock += detalle.cantidad;
                     producto.fechaActualizacion = new Date();
                     await queryRunner.manager.save(Producto, producto);
@@ -551,7 +575,7 @@ export class VentasService {
                 where: { id: detalle.productoId },
             });
 
-            if (producto) {
+            if (producto && producto.tipo === 'ALMACENABLE') {
                 producto.stock += detalle.cantidad;
                 producto.fechaActualizacion = new Date();
                 await this.productoRepository.save(producto);

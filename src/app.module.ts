@@ -33,6 +33,7 @@ import { DevolucionesModule } from './devoluciones/devoluciones.module';
 import { ExportarModule } from './exportar/exportar.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AuditoriaModule } from './auditoria/auditoria.module';
+import { ReparacionesModule } from './reparaciones/reparaciones.module';
 
 @Module({
   imports: [
@@ -86,6 +87,7 @@ import { AuditoriaModule } from './auditoria/auditoria.module';
     DevolucionesModule,
     ExportarModule,
     AuditoriaModule,
+    ReparacionesModule,
   ],
   controllers: [AppController],
   providers: [

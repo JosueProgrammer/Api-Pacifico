@@ -1,7 +1,7 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { AppModule } from './app.module';
-import { BadRequestException, Logger, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ClassSerializerInterceptor, Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import YAML from 'yamljs';
@@ -61,6 +61,7 @@ async function bootstrap() {
 
   // Usar interceptores globales
   app.useGlobalInterceptors(
+    new ClassSerializerInterceptor(app.get(Reflector)),
     new TransformResponseInterceptor(),
     new LoggingInterceptor(),
   );

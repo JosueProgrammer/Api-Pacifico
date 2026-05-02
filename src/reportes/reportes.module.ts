@@ -8,6 +8,8 @@ import { Producto } from '../common/entities/producto.entity';
 import { Compra } from '../common/entities/compra.entity';
 import { AuthModule } from '../auth/auth.module';
 import { Usuario } from '../common/entities/usuario.entity';
+import { Cliente } from '../common/entities/cliente.entity';
+import { Caja, EstadoCaja } from '../common/entities/caja.entity';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { Usuario } from '../common/entities/usuario.entity';
       Producto,
       Compra,
       Usuario,
+      Cliente,
+      Caja,
     ]),
     AuthModule,
   ],
@@ -24,4 +28,4 @@ import { Usuario } from '../common/entities/usuario.entity';
   providers: [ReportesService],
   exports: [ReportesService],
 })
-export class ReportesModule {}
+export class ReportesModule { }

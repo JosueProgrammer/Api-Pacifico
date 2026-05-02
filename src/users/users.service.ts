@@ -151,9 +151,12 @@ export class UsersService {
   async changePassword(id: string, changePasswordDto: ChangePasswordDto): Promise<void> {
     const usuario = await this.findOne(id);
     
-    const isMatch = await bcrypt.compare(changePasswordDto.currentPassword, usuario.contraseña);
-    if (!isMatch) {
-      throw new BadRequestException('La contraseña actual es incorrecta');
+    // Si se proporciona la contraseña actual, o no es un reset forzado de admin
+    if (changePasswordDto.currentPassword) {
+      const isMatch = await bcrypt.compare(changePasswordDto.currentPassword, usuario.contraseña);
+      if (!isMatch) {
+        throw new BadRequestException('La contraseña actual es incorrecta');
+      }
     }
 
     const saltRounds = 10;

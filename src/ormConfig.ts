@@ -10,7 +10,7 @@ export default new DataSource({
     type: 'postgres',
     url: configService.get('POSTGRES_URL'),
     ssl: { rejectUnauthorized: false },
-    // No especificar esquema inicialmente, se creará en las migraciones
+    schema: 'api_pacifico',
     entities: [__dirname + '/**/*.entity.ts'],
     synchronize: configService.get<boolean>('SYNCHRONIZE') || false,
     logging: configService.get('NODE_ENV') === 'development',
